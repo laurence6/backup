@@ -10,7 +10,7 @@
 # 
 
 MYNAME=$(basename "$0")
-Version="0.1"
+Version="0.1.1"
 
 print_help() {
     cat << EOF
@@ -73,6 +73,10 @@ do
         -V | --version )
             printf "$MYNAME $Version\n\nWritten by Laurence Liu <liuxy6@gmail.com>\n"
             exit 0
+            ;;
+        * )
+            printf "$MYNAME: Invalid option \"$1\"\nTry \"$MYNAME --help\" for more information.\n"
+            exit 1
             ;;
     esac
     shift
