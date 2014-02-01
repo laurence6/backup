@@ -10,16 +10,14 @@
 # - md5sum
 #
 # TODO: restore
-# TODO: configure file
+# TODO: bz\xz
+#
 
 MYNAME=$(basename "$0")
-VERSION="0.2.0"
+VERSION="0.3.0"
+DATE=$(date +%F)
 
-date=$(date +%F)
-backupdir="/boot/grub/grub.cfg /boot/EFI /etc /home/liu"
-exclude=".bash_history .config/google-chrome .config/google-chrome-unstable Desktop Documents Downloads Dropbox .dropbox* .local/share/Trash Pictures .macromedia Templates Videos VirtualBoxVMs .purple .thumbnails /etc/fstab /etc/hostname *cache* *Cache* *tmp* *.log* *.old"
-owner="liu"
-owngrp="liu"
+source backup.conf
 
 ####################
 
@@ -49,14 +47,14 @@ backup() {
         echo "Non root user. Please run as root." >&2
         exit 1
     else
-        echo "Today is $date. Backup begins."
-        echo $exclude | tr " " "\n" > /tmp/backup_exclude_$date
-        tar -cpvzf $1/$date.backup.tgz $backupdir --exclude-from /tmp/backup_exclude_$date 2>/dev/null
-        comm -23 <(pacman -Qeq|sort) <(pacman -Qmq|sort) > $1/$date.packagelist.txt
-        md5sum $1/$date.backup.tgz $1/$date.packagelist.txt > $1/$date.md5sum.txt
-        chown $owner $1/$date.backup.tgz $1/$date.packagelist.txt $1/$date.md5sum.txt
-        chgrp $owngrp $1/$date.backup.tgz $1/$date.packagelist.txt $1/$date.md5sum.txt
-        rm /tmp/backup_exclude_$date
+        echo "Today is $DATE. Backup begins."
+        echo $exclude | tr " " "\n" > /tmp/backup_exclude_$DATE
+        cd $1
+        tar -cpvzf $DATE.backup.tgz $backupdir --exclude-from /tmp/backup_exclude_$DATE 2>/dev/null
+        comm -23 <(pacman -Qeq|sort) <(pacman -Qmq|sort) > $DATE.packagelist.txt
+        md5sum $DATE.backup.tgz $DATE.packagelist.txt > $DATE.md5sum.txt
+        chown $owner:$owngrp $DATE.backup.tgz $DATE.packagelist.txt $DATE.md5sum.txt
+        rm /tmp/backup_exclude_$DATE
         echo "Done!"
     fi
 }
