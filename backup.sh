@@ -3,18 +3,29 @@
 # Backup my computer.
 #
 # Written by Laurence Liu <liuxy6@gmail.com>
+# GNU General Public License
 #
 # Requirements:
 # - tar
 # - md5sum
-# 
+#
+# TODO: restore
+# TODO: configure file
 
 MYNAME=$(basename "$0")
-Version="0.1.2"
+VERSION="0.2.0"
+
+date=$(date +%F)
+backupdir="/boot/grub/grub.cfg /boot/EFI /etc /home/liu"
+exclude=".bash_history .config/google-chrome .config/google-chrome-unstable Desktop Documents Downloads Dropbox .dropbox* .local/share/Trash Pictures .macromedia Templates Videos VirtualBoxVMs .purple .thumbnails /etc/fstab /etc/hostname *cache* *Cache* *tmp* *.log* *.old"
+owner="liu"
+owngrp="liu"
+
+####################
 
 print_help() {
     cat << EOF
-$MYNAME $Version, backup my computer.
+$MYNAME $VERSION, backup my computer.
 Useage: $MYNAME [OPTION]
 
 Backup:
@@ -22,7 +33,7 @@ Backup:
     -q, --quiet                       keep quiet
     
 Check:
-    -c, --check [/path/to/file]       check the file
+    -c, --check [/path/to/md5sumfile] check the file
     
 Miscellaneous:
     -h, --help                        display this help and exit
@@ -35,24 +46,28 @@ EOF
 backup() {
     if [ $UID != 0 ]
     then
-        echo "Non root user. Please run as root."
+        echo "Non root user. Please run as root." >&2
         exit 1
     else
-        echo "Today is $(date +%F). Backup begins."
-        tar -cpvzf $1/$(date +%F).backup.tgz /etc /home/liu --exclude={.bash_history,.config/google-chrome,.config/google-chrome-unstable,Desktop,Documents,Downloads,Dropbox,.dropbox*,.local/share/Trash,Pictures,.macromedia,Templates,Videos,.purple,.thumbnails,/etc/fstab,/etc/hostname,*cache*,*Cache*,*tmp*}
-        comm -23 <(pacman -Qeq|sort) <(pacman -Qmq|sort) > $1/$(date +%F).packagelist.txt
-        md5sum $1/$(date +%F).backup.tgz $1/$(date +%F).packagelist.txt > $1/$(date +%F).md5sum.txt
-        chown liu $1/$(date +%F).backup.tgz $1/$(date +%F).packagelist.txt $1/$(date +%F).md5sum.txt
-        chgrp liu $1/$(date +%F).backup.tgz $1/$(date +%F).packagelist.txt $1/$(date +%F).md5sum.txt
+        echo "Today is $date. Backup begins."
+        echo $exclude | tr " " "\n" > /tmp/backup_exclude_$date
+        tar -cpvzf $1/$date.backup.tgz $backupdir --exclude-from /tmp/backup_exclude_$date 2>/dev/null
+        comm -23 <(pacman -Qeq|sort) <(pacman -Qmq|sort) > $1/$date.packagelist.txt
+        md5sum $1/$date.backup.tgz $1/$date.packagelist.txt > $1/$date.md5sum.txt
+        chown $owner $1/$date.backup.tgz $1/$date.packagelist.txt $1/$date.md5sum.txt
+        chgrp $owngrp $1/$date.backup.tgz $1/$date.packagelist.txt $1/$date.md5sum.txt
+        rm /tmp/backup_exclude_$date
         echo "Done!"
     fi
 }
 
 check() {
     cd $(dirname $1)
-    md5sum -c $1
+    md5sum -c $(basename $1)
     exit 0
 }
+
+####################
 
 if [ $# = 0 ]
 then
@@ -67,7 +82,7 @@ do
             shift
             if [ "$2" = "-q" -o "$2" = "--quiet" ]
             then
-                backup $1 > /dev/null
+                backup $1 1> /dev/null
                 exit 0
             else
                 backup $1
@@ -87,11 +102,11 @@ do
             exit 0
             ;;
         -V | --version )
-            printf "$MYNAME $Version\n\nWritten by Laurence Liu <liuxy6@gmail.com>\n"
+            printf "$MYNAME $VERSION\nWritten by Laurence Liu <liuxy6@gmail.com>\n"
             exit 0
             ;;
-        * )
-            printf "$MYNAME: Invalid option \"$1\"\nTry \"$MYNAME --help\" for more information.\n"
+         * )
+            printf "$MYNAME: Invalid option \"$1\"\nTry \"$MYNAME --help\" for more information.\n" >&2
             exit 1
             ;;
     esac
