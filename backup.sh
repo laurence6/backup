@@ -1,6 +1,6 @@
 #! /bin/bash
 #
-# Backup my computer.
+# Backup the configure files.
 #
 # Written by Laurence Liu <liuxy6@gmail.com>
 # GNU General Public License
@@ -13,17 +13,23 @@
 # TODO: bz\xz
 #
 
+####################
+
 MYNAME=$(basename "$0")
-VERSION="0.3.0"
+VERSION="0.3.1"
 DATE=$(date +%F)
 
+backupdir="/etc"
+exclude="*cache* *Cache* *tmp* *.log* *.old*"
+owner="root"
+owngrp="root"
 source backup.conf
 
 ####################
 
 print_help() {
     cat << EOF
-$MYNAME $VERSION, backup my computer.
+$MYNAME $VERSION, backup the configure files.
 Useage: $MYNAME [OPTION]
 
 Backup:
