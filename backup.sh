@@ -1,6 +1,6 @@
 #! /bin/bash
 #
-# Backup the configure files.
+# Backup my computer.
 #
 # Written by Laurence Liu <liuxy6@gmail.com>
 # GNU General Public License
@@ -11,31 +11,34 @@
 #
 # TODO: restore
 # TODO: bz\xz
-#
+# TODO: incremental backup
 
 ####################
 
-MYNAME=$(basename "$0")
-VERSION="0.3.1"
-DATE=$(date +%F)
+MYNAME=`basename "$0"`
+VERSION="0.4.0"
+DATE=`date +%F`
 
 backupdir="/etc"
 exclude="*cache* *Cache* *tmp* *.log* *.old*"
 owner="root"
 owngrp="root"
-source backup.conf
+source /etc/backuprc 2> /dev/null
+source backuprc 2> /dev/null
 
 ####################
 
 print_help() {
     cat << EOF
-$MYNAME $VERSION, backup the configure files.
+$MYNAME $VERSION, backup my computer.
 Useage: $MYNAME [OPTION]
 
-Backup:
-    -o, --output [/path/to/directory] output the file to the specified directory
+Interface:
     -q, --quiet                       keep quiet
-    
+
+Backup & Restore:
+    -o, --output [/path/to/directory] output the file to the specified directory
+
 Check:
     -c, --check [/path/to/md5sumfile] check the file
     
@@ -50,24 +53,22 @@ EOF
 backup() {
     if [ $UID != 0 ]
     then
-        echo "Non root user. Please run as root." >&2
+        echo -e "Non root user. Please run as root." >&2
         exit 1
     else
-        echo "Today is $DATE. Backup begins."
-        echo $exclude | tr " " "\n" > /tmp/backup_exclude_$DATE
+        echo -e "Today is $DATE. Backup begins."
         cd $1
-        tar -cpvzf $DATE.backup.tgz $backupdir --exclude-from /tmp/backup_exclude_$DATE 2>/dev/null
+        eval tar -cpvzf $DATE.backup.tgz $backupdir --exclude=$exclude
         comm -23 <(pacman -Qeq|sort) <(pacman -Qmq|sort) > $DATE.packagelist.txt
         md5sum $DATE.backup.tgz $DATE.packagelist.txt > $DATE.md5sum.txt
         chown $owner:$owngrp $DATE.backup.tgz $DATE.packagelist.txt $DATE.md5sum.txt
-        rm /tmp/backup_exclude_$DATE
-        echo "Done!"
+        echo -e "Done!"
     fi
 }
 
 check() {
-    cd $(dirname $1)
-    md5sum -c $(basename $1)
+    cd `dirname $1`
+    md5sum -c `basename $1`
     exit 0
 }
 
@@ -79,23 +80,18 @@ then
     exit 0
 fi
 
-while [ $# != 0 ]
+ARGS=`getopt -o "qo:c:hV" -l "quiet,output:,check:,help,version" -- "$@" 2> /dev/null`
+eval set -- "${ARGS}" 
+
+while true
 do
     case $1 in
+        -q | --quiet )
+            quiet="yes"
+            ;;
         -o | --output )
             shift
-            if [ "$2" = "-q" -o "$2" = "--quiet" ]
-            then
-                backup $1 1> /dev/null
-                exit 0
-            else
-                backup $1
-                exit 0
-            fi
-            ;;
-        -q | --quiet )
-            backup . > /dev/null
-            exit 0
+            output=$1
             ;;
         -c | --check )
             shift
@@ -106,11 +102,15 @@ do
             exit 0
             ;;
         -V | --version )
-            printf "$MYNAME $VERSION\nWritten by Laurence Liu <liuxy6@gmail.com>\n"
+            echo -e "$MYNAME $VERSION\nWritten by Laurence Liu <liuxy6@gmail.com>"
             exit 0
             ;;
+#         -- )
+#             shift
+#             break
+#            ;;
          * )
-            printf "$MYNAME: Invalid option \"$1\"\nTry \"$MYNAME --help\" for more information.\n" >&2
+            echo -e "$MYNAME: Invalid option \"$1\"\nTry \"$MYNAME --help\" for more information." >&2
             exit 1
             ;;
     esac
