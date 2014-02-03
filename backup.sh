@@ -10,23 +10,21 @@
 # - md5sum
 #
 # TODO: restore
-# TODO: bz\xz
 # TODO: incremental backup
 
 ####################
 
 MYNAME=`basename "$0"`
-VERSION="0.4.1"
+VERSION="0.4.2"
 DATE=`date +%F`
 
 backupdir="/etc"
 exclude="*cache* *Cache* *tmp* *.log* *.old*"
-compress="gzip"
 compressed_ext="gz"
 owner="root"
 owngrp="root"
-source /etc/backuprc 2> /dev/null
-source backuprc 2> /dev/null
+source /etc/backuprc 2>/dev/null
+source backuprc 2>/dev/null
 
 ####################
 
@@ -40,6 +38,7 @@ Interface:
 
 Backup & Restore:
     -o, --output [/path/to/directory] output the file to the specified directory
+    -r, --restore                     restore
 
 Check:
     -c, --check [/path/to/md5sumfile] check the file
@@ -60,9 +59,9 @@ backup() {
     else
         echo -e "Today is $DATE. Backup begins."
         cd $1
-        eval tar -cpv --$compress -f $DATE.backup.tar.$compressed_ext $backupdir --exclude=$exclude
-        comm -23 <(pacman -Qeq|sort) <(pacman -Qmq|sort) > $DATE.packagelist.txt
-        md5sum $DATE.backup.tar.$compressed_ext $DATE.packagelist.txt > $DATE.md5sum.txt
+        eval tar -pa$quiet -cf $DATE.backup.tar.$compressed_ext $backupdir --exclude=$exclude 2>/dev/null
+        comm -23 <(pacman -Qeq|sort) <(pacman -Qmq|sort) >$DATE.packagelist.txt
+        md5sum $DATE.backup.tar.$compressed_ext $DATE.packagelist.txt >$DATE.md5sum.txt
         chown $owner:$owngrp $DATE.backup.tar.$compressed_ext $DATE.packagelist.txt $DATE.md5sum.txt
         echo -e "Done!"
     fi
@@ -82,18 +81,21 @@ then
     exit 0
 fi
 
-ARGS=`getopt -o "qo:c:hV" -l "quiet,output:,check:,help,version" -- "$@" 2> /dev/null`
+ARGS=`getopt -n $MYNAME -o "qo:c:hV" -l "quiet,output:,check:,help,version" -- "$@"`
 eval set -- "${ARGS}" 
+
+quiet="v"
 
 while true
 do
     case $1 in
         -q | --quiet )
-            quiet="yes"
+            quiet=""
             ;;
         -o | --output )
             shift
-            output=$1
+            backup $1
+            exit 0
             ;;
         -c | --check )
             shift
@@ -107,13 +109,9 @@ do
             echo -e "$MYNAME $VERSION\nWritten by Laurence Liu <liuxy6@gmail.com>"
             exit 0
             ;;
-#         -- )
-#             shift
-#             break
-#            ;;
-         * )
-            echo -e "$MYNAME: Invalid option \"$1\"\nTry \"$MYNAME --help\" for more information." >&2
-            exit 1
+         -- )
+            shift
+            break
             ;;
     esac
     shift
