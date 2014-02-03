@@ -8,6 +8,11 @@ backupdir="/boot/grub/grub.cfg /boot/EFI /etc /home/liu"
 # Exclude these files
 exclude="{.bash_history,.config/google-chrome,.config/google-chrome-unstable,Desktop,Documents,Downloads,Dropbox,.dropbox*,.local/share/Trash,Pictures,.macromedia,Templates,Videos,VirtualBoxVMs,.purple,.thumbnails,/etc/fstab,/etc/hostname,*cache*,*Cache*,*tmp*,*.log*,*.old}"
 
+# Compress
+#compress="xz"    # Default is "gzip"
+#compressed_ext="xz"    # Compressed file extension
+                        # Default is "gz"
+
 # Backup owner
 owner="liu"
 owngrp="liu"
