@@ -16,11 +16,13 @@
 ####################
 
 MYNAME=`basename "$0"`
-VERSION="0.4.0"
+VERSION="0.4.1"
 DATE=`date +%F`
 
 backupdir="/etc"
 exclude="*cache* *Cache* *tmp* *.log* *.old*"
+compress="gzip"
+compressed_ext="gz"
 owner="root"
 owngrp="root"
 source /etc/backuprc 2> /dev/null
@@ -58,10 +60,10 @@ backup() {
     else
         echo -e "Today is $DATE. Backup begins."
         cd $1
-        eval tar -cpvzf $DATE.backup.tgz $backupdir --exclude=$exclude
+        eval tar -cpv --$compress -f $DATE.backup.tar.$compressed_ext $backupdir --exclude=$exclude
         comm -23 <(pacman -Qeq|sort) <(pacman -Qmq|sort) > $DATE.packagelist.txt
-        md5sum $DATE.backup.tgz $DATE.packagelist.txt > $DATE.md5sum.txt
-        chown $owner:$owngrp $DATE.backup.tgz $DATE.packagelist.txt $DATE.md5sum.txt
+        md5sum $DATE.backup.tar.$compressed_ext $DATE.packagelist.txt > $DATE.md5sum.txt
+        chown $owner:$owngrp $DATE.backup.tar.$compressed_ext $DATE.packagelist.txt $DATE.md5sum.txt
         echo -e "Done!"
     fi
 }
