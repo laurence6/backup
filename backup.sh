@@ -15,8 +15,9 @@
 ####################
 
 MYNAME=`basename "$0"`
-VERSION="0.4.2"
-DATE=`date +%F`
+VERSION="0.5.0"
+TIME=`date +%F`
+#TIME=`date +%F-%H-%M-%S`
 
 backupdir="/etc"
 exclude="*cache* *Cache* *tmp* *.log* *.old*"
@@ -51,26 +52,53 @@ Written by Laurence Liu <liuxy6@gmail.com>
 EOF
 }
 
-backup() {
+check_root() {
     if [ $UID != 0 ]
     then
         echo -e "Non root user. Please run as root." >&2
         exit 1
     else
-        echo -e "Today is $DATE. Backup begins."
-        cd $1
-        eval tar -pa$quiet -cf $DATE.backup.tar.$compressed_ext $backupdir --exclude=$exclude 2>/dev/null
-        comm -23 <(pacman -Qeq|sort) <(pacman -Qmq|sort) >$DATE.packagelist.txt
-        md5sum $DATE.backup.tar.$compressed_ext $DATE.packagelist.txt >$DATE.md5sum.txt
-        chown $owner:$owngrp $DATE.backup.tar.$compressed_ext $DATE.packagelist.txt $DATE.md5sum.txt
-        echo -e "Done!"
+        return 0
     fi
+}
+
+backup() {
+    check_root
+    echo -e "[$TIME] Backup begins."
+        cd $1
+        eval tar -pa$quiet -cf $TIME.backup.tar.$compressed_ext $backupdir --exclude=$exclude 2>/dev/null
+        comm -23 <(pacman -Qeq|sort) <(pacman -Qmq|sort) >$TIME.packagelist.txt
+        md5sum $TIME.backup.tar.$compressed_ext $TIME.packagelist.txt >$TIME.md5sum.txt
+        chown $owner:$owngrp $TIME.backup.tar.$compressed_ext $TIME.packagelist.txt $TIME.md5sum.txt
+    echo -e "Done!"
 }
 
 check() {
     cd `dirname $1`
     md5sum -c `basename $1`
     exit 0
+}
+
+restore() {
+#alpha
+    while true
+    do
+        read -s -n1 -p "Are you sure to restore all files (It will be dangerous) ? (y/N) :"
+        echo -e ""
+        case $REPLY in
+            y | Y )
+                check_root
+#                eval tar -pa$quiet -xf $1 -C /
+                echo -e "Ok"
+                exit 0
+                ;;
+            n | N )
+                exit 0
+                ;;
+             * )
+                exit 0
+        esac
+    done
 }
 
 ####################
@@ -81,7 +109,7 @@ then
     exit 0
 fi
 
-ARGS=`getopt -n $MYNAME -o "qo:c:hV" -l "quiet,output:,check:,help,version" -- "$@"`
+ARGS=`getopt -n $MYNAME -o "qo:rc:hV" -l "quiet,output:,restore,check:,help,version" -- "$@"`
 eval set -- "${ARGS}" 
 
 quiet="v"
@@ -96,6 +124,9 @@ do
             shift
             backup $1
             exit 0
+            ;;
+        -r | --restore )
+            restore
             ;;
         -c | --check )
             shift
