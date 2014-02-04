@@ -15,7 +15,7 @@
 ####################
 
 MYNAME=`basename "$0"`
-VERSION="0.5.0"
+VERSION="0.5.1"
 TIME=`date +%F`
 #TIME=`date +%F-%H-%M-%S`
 
@@ -76,7 +76,6 @@ backup() {
 check() {
     cd `dirname $1`
     md5sum -c `basename $1`
-    exit 0
 }
 
 restore() {
@@ -90,18 +89,20 @@ restore() {
                 check_root
 #                eval tar -pa$quiet -xf $1 -C /
                 echo -e "Ok"
-                exit 0
                 ;;
             n | N )
-                exit 0
+                break
                 ;;
-             * )
-                exit 0
+            ""  )
+                break
+                ;;
         esac
     done
 }
 
 ####################
+
+quiet="v"
 
 if [ $# = 0 ]
 then
@@ -112,13 +113,12 @@ fi
 ARGS=`getopt -n $MYNAME -o "qo:rc:hV" -l "quiet,output:,restore,check:,help,version" -- "$@"`
 eval set -- "${ARGS}" 
 
-quiet="v"
-
 while true
 do
     case $1 in
         -q | --quiet )
             quiet=""
+            if [ $2 = "--" ]; then backup .; fi
             ;;
         -o | --output )
             shift
@@ -126,11 +126,14 @@ do
             exit 0
             ;;
         -r | --restore )
-            restore
+            shift
+            restore $1
+            exit 0
             ;;
         -c | --check )
             shift
             check $1
+            exit 0
             ;;
         -h | --help )
             print_help
