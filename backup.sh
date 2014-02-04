@@ -15,9 +15,7 @@
 ####################
 
 MYNAME=`basename "$0"`
-VERSION="0.5.1"
-TIME=`date +%F`
-#TIME=`date +%F-%H-%M-%S`
+VERSION="0.5.2"
 
 backupdir="/etc"
 exclude="*cache* *Cache* *tmp* *.log* *.old*"
@@ -64,13 +62,15 @@ check_root() {
 
 backup() {
     check_root
-    echo -e "[$TIME] Backup begins."
+    #TIME=`date +%F`
+    TIME=`date +%F-%H-%M-%S`
+    echo -e "[$TIME] $MYNAME $VERSION: Backup begins."
         cd $1
         eval tar -pa$quiet -cf $TIME.backup.tar.$compressed_ext $backupdir --exclude=$exclude 2>/dev/null
         comm -23 <(pacman -Qeq|sort) <(pacman -Qmq|sort) >$TIME.packagelist.txt
         md5sum $TIME.backup.tar.$compressed_ext $TIME.packagelist.txt >$TIME.md5sum.txt
         chown $owner:$owngrp $TIME.backup.tar.$compressed_ext $TIME.packagelist.txt $TIME.md5sum.txt
-    echo -e "Done!"
+    echo -e "[`date +%F-%H-%M-%S`] $MYNAME $VERSION: Done."
 }
 
 check() {
