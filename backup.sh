@@ -9,16 +9,15 @@
 # - tar
 # - md5sum
 #
-# TODO: restore
 # TODO: incremental backup
 
 ####################
 
 MYNAME=`basename "$0"`
-VERSION="0.5.2"
+VERSION="0.5.3"
 
-backupdir="/etc"
-exclude="*cache* *Cache* *tmp* *.log* *.old*"
+backupdir="/etc /root"
+exclude="{.bash_history,.local/share/Trash,.thumbnails,/etc/fstab,/etc/hostname,*cache*,*Cache*,*tmp*,*.log*,*.old}"
 compressed_ext="gz"
 owner="root"
 owngrp="root"
@@ -33,18 +32,18 @@ $MYNAME $VERSION, backup my computer.
 Useage: $MYNAME [OPTION]
 
 Interface:
-    -q, --quiet                       keep quiet
+    -q, --quiet                          keep quiet
 
 Backup & Restore:
-    -o, --output [/path/to/directory] output the file to the specified directory
-    -r, --restore                     restore
+    -o, --output [/path/to/directory]    output files to the specified directory
+    -r, --restore [/path/to/md5sumfile]  restore
 
 Check:
-    -c, --check [/path/to/md5sumfile] check the file
+    -c, --check [/path/to/md5sumfile]    check the file
     
 Miscellaneous:
-    -h, --help                        display this help and exit
-    -V, --version                     print version information and exit
+    -h, --help                           display this help and exit
+    -V, --version                        print version information and exit
 
 Written by Laurence Liu <liuxy6@gmail.com>
 EOF
@@ -55,9 +54,13 @@ check_root() {
     then
         echo -e "Non root user. Please run as root." >&2
         exit 1
-    else
-        return 0
     fi
+}
+
+check() {
+    cd `dirname $1`
+    md5sum -c `basename $1`
+    if [ $? != 0 ]; then exit 1; fi
 }
 
 backup() {
@@ -66,38 +69,22 @@ backup() {
     TIME=`date +%F-%H-%M-%S`
     echo -e "[$TIME] $MYNAME $VERSION: Backup begins."
         cd $1
-        eval tar -pa$quiet -cf $TIME.backup.tar.$compressed_ext $backupdir --exclude=$exclude 2>/dev/null
+        eval tar -pa$quiet -cf $TIME.files.tar.$compressed_ext $backupdir --exclude=$exclude 2>/dev/null
         comm -23 <(pacman -Qeq|sort) <(pacman -Qmq|sort) >$TIME.packagelist.txt
-        md5sum $TIME.backup.tar.$compressed_ext $TIME.packagelist.txt >$TIME.md5sum.txt
-        chown $owner:$owngrp $TIME.backup.tar.$compressed_ext $TIME.packagelist.txt $TIME.md5sum.txt
-    echo -e "[`date +%F-%H-%M-%S`] $MYNAME $VERSION: Done."
-}
-
-check() {
-    cd `dirname $1`
-    md5sum -c `basename $1`
+        md5sum $TIME.files.tar.$compressed_ext $TIME.packagelist.txt >$TIME.md5sum.txt
+        chown $owner:$owngrp $TIME.files.tar.$compressed_ext $TIME.packagelist.txt $TIME.md5sum.txt
+    echo -e "[`date +%F-%H-%M-%S`] $MYNAME $VERSION: Complete."
 }
 
 restore() {
-#alpha
-    while true
-    do
-        read -s -n1 -p "Are you sure to restore all files (It will be dangerous) ? (y/N) :"
-        echo -e ""
-        case $REPLY in
-            y | Y )
-                check_root
-#                eval tar -pa$quiet -xf $1 -C /
-                echo -e "Ok"
-                ;;
-            n | N )
-                break
-                ;;
-            ""  )
-                break
-                ;;
-        esac
-    done
+    check $1
+    check_root
+    cd `dirname $1`
+    files_filename=`awk '/tar/ {print $2}' $1`
+    packagelist_filename=`awk '/packagelist/ {print $2}' $1`
+    pacman -S --needed `diff <(cat $packagelist_filename|sort) <(diff <(cat $packagelist_filename|sort) <(pacman -Slq|sort)|grep \<|cut -f2 -d' ')|grep \<|cut -f2 -d' '`
+    eval tar -pa$quiet -xf $files_filename -C /
+    echo -e "$MYNAME $VERSION: Complete."
 }
 
 ####################
@@ -110,7 +97,7 @@ then
     exit 0
 fi
 
-ARGS=`getopt -n $MYNAME -o "qo:rc:hV" -l "quiet,output:,restore,check:,help,version" -- "$@"`
+ARGS=`getopt -n $MYNAME -o "qo:r:c:hV" -l "quiet,output:,restore:,check:,help,version" -- "$@"`
 eval set -- "${ARGS}" 
 
 while true
@@ -127,8 +114,23 @@ do
             ;;
         -r | --restore )
             shift
-            restore $1
-            exit 0
+            while true
+            do
+                read -s -n1 -p "Are you sure to restore all files (It will be dangerous)? [y/N]"
+                echo -e ""
+                case $REPLY in
+                    y | Y )
+                        restore $1
+                        exit 0
+                        ;;
+                    n | N )
+                        exit 0
+                        ;;
+                    ""  )
+                        exit 0
+                        ;;
+                esac
+            done
             ;;
         -c | --check )
             shift
@@ -145,7 +147,7 @@ do
             ;;
          -- )
             shift
-            break
+            exit 0
             ;;
     esac
     shift
