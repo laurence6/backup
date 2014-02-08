@@ -9,15 +9,14 @@
 # - tar
 # - md5sum
 #
-# TODO: incremental backup
 
 ####################
 
 MYNAME=`basename "$0"`
-VERSION="0.5.3"
+VERSION="0.5.4"
 
 backupdir="/etc /root"
-exclude="{.bash_history,.local/share/Trash,.thumbnails,/etc/fstab,/etc/hostname,*cache*,*Cache*,*tmp*,*.log*,*.old}"
+exclude=".bash_history,.local/share/Trash,.thumbnails,/etc/fstab,/etc/hostname,*cache*,*Cache*,*tmp*,*.log*,*.old"
 compressed_ext="gz"
 owner="root"
 owngrp="root"
@@ -69,7 +68,7 @@ backup() {
     TIME=`date +%F-%H-%M-%S`
     echo -e "[$TIME] $MYNAME $VERSION: Backup begins."
         cd $1
-        eval tar -pa$quiet -cf $TIME.files.tar.$compressed_ext $backupdir --exclude=$exclude 2>/dev/null
+        eval tar -pa$quiet -cf $TIME.files.tar.$compressed_ext $backupdir --exclude="{$exclude}" 2>/dev/null
         comm -23 <(pacman -Qeq|sort) <(pacman -Qmq|sort) >$TIME.packagelist.txt
         md5sum $TIME.files.tar.$compressed_ext $TIME.packagelist.txt >$TIME.md5sum.txt
         chown $owner:$owngrp $TIME.files.tar.$compressed_ext $TIME.packagelist.txt $TIME.md5sum.txt
@@ -123,10 +122,7 @@ do
                         restore $1
                         exit 0
                         ;;
-                    n | N )
-                        exit 0
-                        ;;
-                    ""  )
+                    n | N | "" )
                         exit 0
                         ;;
                 esac

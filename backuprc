@@ -6,7 +6,7 @@
 backupdir="/etc /root"
 
 # Exclude these files
-exclude="{.bash_history,.local/share/Trash,.thumbnails,/etc/fstab,/etc/hostname,*cache*,*Cache*,*tmp*,*.log*,*.old}"
+exclude=".bash_history,.local/share/Trash,.thumbnails,/etc/fstab,/etc/hostname,*cache*,*Cache*,*tmp*,*.log*,*.old"
 
 # Compressed file extension (Default is "gz")
 #compressed_ext="xz"
