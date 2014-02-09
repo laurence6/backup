@@ -1,6 +1,6 @@
 #! /bin/bash
 #
-# Backup my computer.
+# Backup and restore files on the computer.
 #
 # Written by Laurence Liu <liuxy6@gmail.com>
 # GNU General Public License
@@ -9,11 +9,12 @@
 # - tar
 # - md5sum
 #
+# TODO: GUI
 
 ####################
 
 MYNAME=`basename "$0"`
-VERSION="0.5.4"
+VERSION="0.5.5"
 
 backupdir="/etc /root"
 exclude=".bash_history,.local/share/Trash,.thumbnails,/etc/fstab,/etc/hostname,*cache*,*Cache*,*tmp*,*.log*,*.old"
@@ -27,7 +28,7 @@ source backuprc 2>/dev/null
 
 print_help() {
     cat << EOF
-$MYNAME $VERSION, backup my computer.
+$MYNAME $VERSION, backup and restore files on the computer.
 Useage: $MYNAME [OPTION]
 
 Interface:
@@ -109,7 +110,7 @@ do
         -o | --output )
             shift
             backup $1
-            exit 0
+            break
             ;;
         -r | --restore )
             shift
@@ -120,10 +121,10 @@ do
                 case $REPLY in
                     y | Y )
                         restore $1
-                        exit 0
+                        break
                         ;;
                     n | N | "" )
-                        exit 0
+                        break
                         ;;
                 esac
             done
@@ -131,19 +132,19 @@ do
         -c | --check )
             shift
             check $1
-            exit 0
+            break
             ;;
         -h | --help )
             print_help
-            exit 0
+            break
             ;;
         -V | --version )
             echo -e "$MYNAME $VERSION\nWritten by Laurence Liu <liuxy6@gmail.com>"
-            exit 0
+            break
             ;;
          -- )
             shift
-            exit 0
+            break
             ;;
     esac
     shift
