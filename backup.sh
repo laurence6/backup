@@ -40,7 +40,7 @@ Backup & Restore:
 
 Check:
     -c, --check [/path/to/md5sumfile]    check the file
-    
+
 Miscellaneous:
     -h, --help                           display this help and exit
     -V, --version                        print version information and exit
@@ -98,7 +98,7 @@ then
 fi
 
 ARGS=`getopt -n $MYNAME -o "qo:r:c:hV" -l "quiet,output:,restore:,check:,help,version" -- "$@"`
-eval set -- "${ARGS}" 
+eval set -- "${ARGS}"
 
 while true
 do
