@@ -10,11 +10,14 @@
 # - md5sum
 #
 # TODO: GUI
+# TODO: options
+# TODO: Debian support
+#
 
 ####################
 
 MYNAME=`basename "$0"`
-VERSION="0.5.5"
+VERSION="0.5.6"
 
 backupdir="/etc /root"
 exclude=".bash_history,.local/share/Trash,.thumbnails,/etc/fstab,/etc/hostname,*cache*,*Cache*,*tmp*,*.log*,*.old"
@@ -36,10 +39,10 @@ Interface:
 
 Backup & Restore:
     -o, --output [/path/to/directory]    output files to the specified directory
-    -r, --restore [/path/to/md5sumfile]  restore
+    -r, --restore [/path/to/md5file]  restore
 
 Check:
-    -c, --check [/path/to/md5sumfile]    check the file
+    -c, --check [/path/to/md5file]    check the file
 
 Miscellaneous:
     -h, --help                           display this help and exit
@@ -65,14 +68,13 @@ check() {
 
 backup() {
     check_root
-    #TIME=`date +%F`
     TIME=`date +%F-%H-%M-%S`
     echo -e "[$TIME] $MYNAME $VERSION: Backup begins."
         cd $1
         eval tar -pa$quiet -cf $TIME.files.tar.$compressed_ext $backupdir --exclude="{$exclude}" 2>/dev/null
         comm -23 <(pacman -Qeq|sort) <(pacman -Qmq|sort) >$TIME.packagelist.txt
-        md5sum $TIME.files.tar.$compressed_ext $TIME.packagelist.txt >$TIME.md5sum.txt
-        chown $owner:$owngrp $TIME.files.tar.$compressed_ext $TIME.packagelist.txt $TIME.md5sum.txt
+        md5sum $TIME.files.tar.$compressed_ext $TIME.packagelist.txt >$TIME.md5
+        chown $owner:$owngrp $TIME.files.tar.$compressed_ext $TIME.packagelist.txt $TIME.md5
     echo -e "[`date +%F-%H-%M-%S`] $MYNAME $VERSION: Complete."
 }
 
