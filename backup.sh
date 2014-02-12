@@ -17,11 +17,12 @@
 ####################
 
 MYNAME=`basename "$0"`
-VERSION="0.5.6"
+VERSION="0.6.0"
 
 backupdir="/etc /root"
 exclude=".bash_history,.local/share/Trash,.thumbnails,/etc/fstab,/etc/hostname,*cache*,*Cache*,*tmp*,*.log*,*.old"
 compressed_ext="gz"
+pkgmgr="none"
 owner="root"
 owngrp="root"
 source /etc/backuprc 2>/dev/null
@@ -72,7 +73,20 @@ backup() {
     echo -e "[$TIME] $MYNAME $VERSION: Backup begins."
         cd $1
         eval tar -pa$quiet -cf $TIME.files.tar.$compressed_ext $backupdir --exclude="{$exclude}" 2>/dev/null
-        comm -23 <(pacman -Qeq|sort) <(pacman -Qmq|sort) >$TIME.packagelist.txt
+        case "$pkgmgr" in
+            pacman )
+                comm -23 <(pacman -Qeq|sort) <(pacman -Qmq|sort) >$TIME.packagelist.txt
+                ;;
+            dpkg )
+                dpkg --get-selections >$TIME.packagelist.txt
+                ;;
+            none )
+                echo "Have no package manager"
+                ;;
+            * )
+                echo "Unknown package manager type"
+                ;;
+        esac
         md5sum $TIME.files.tar.$compressed_ext $TIME.packagelist.txt >$TIME.md5
         chown $owner:$owngrp $TIME.files.tar.$compressed_ext $TIME.packagelist.txt $TIME.md5
     echo -e "[`date +%F-%H-%M-%S`] $MYNAME $VERSION: Complete."
@@ -84,7 +98,21 @@ restore() {
     cd `dirname $1`
     files_filename=`awk '/tar/ {print $2}' $1`
     packagelist_filename=`awk '/packagelist/ {print $2}' $1`
-    pacman -S --needed `diff <(cat $packagelist_filename|sort) <(diff <(cat $packagelist_filename|sort) <(pacman -Slq|sort)|grep \<|cut -f2 -d' ')|grep \<|cut -f2 -d' '`
+    case "$pkgmgr" in
+        pacman )
+            pacman -S --needed `diff <(cat $packagelist_filename|sort) <(diff <(cat $packagelist_filename|sort) <(pacman -Slq|sort)|grep \<|cut -f2 -d' ')|grep \<|cut -f2 -d' '`
+            ;;
+        dpkg )
+            dpkg --set-selections <$TIME.packagelist.txt
+            apt-get -u dselect-upgrade
+            ;;
+        none )
+            echo "Have no package manager"
+            ;;
+        * )
+            echo "Unknown package manager type"
+            ;;
+    esac
     eval tar -pa$quiet -xf $files_filename -C /
     echo -e "$MYNAME $VERSION: Complete."
 }
