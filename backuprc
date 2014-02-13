@@ -8,9 +8,11 @@ backupdir="/etc /root"
 # Exclude these files
 exclude=".bash_history,.local/share/Trash,.thumbnails,/etc/fstab,/etc/hostname,*cache*,*Cache*,*tmp*,*.log*,*.old"
 
-# Compressed file extension (Default is "gz")
-#compressed_ext="xz"
+# Compressed file extension (gz, xz, bz2)
+compressed_ext="gz"
+
+# Backup installed packages list (dpkg, pacman, none)
+pkgmgr="dpkg"
 
 # Backup owner
-owner="root"
-owngrp="root"
+owner="root:root"
