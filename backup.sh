@@ -11,20 +11,18 @@
 #
 # TODO: GUI
 # TODO: options
-# TODO: Debian support
 #
 
 ####################
 
 MYNAME=`basename "$0"`
-VERSION="0.6.0"
+VERSION="0.6.1"
 
 backupdir="/etc /root"
 exclude=".bash_history,.local/share/Trash,.thumbnails,/etc/fstab,/etc/hostname,*cache*,*Cache*,*tmp*,*.log*,*.old"
 compressed_ext="gz"
 pkgmgr="none"
-owner="root"
-owngrp="root"
+owner="root:root"
 source /etc/backuprc 2>/dev/null
 source backuprc 2>/dev/null
 
@@ -88,7 +86,7 @@ backup() {
                 ;;
         esac
         md5sum $TIME.files.tar.$compressed_ext $TIME.packagelist.txt >$TIME.md5
-        chown $owner:$owngrp $TIME.files.tar.$compressed_ext $TIME.packagelist.txt $TIME.md5
+        chown $owner $TIME.files.tar.$compressed_ext $TIME.packagelist.txt $TIME.md5
     echo -e "[`date +%F-%H-%M-%S`] $MYNAME $VERSION: Complete."
 }
 
