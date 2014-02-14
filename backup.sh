@@ -16,7 +16,7 @@
 ####################
 
 MYNAME=`basename "$0"`
-VERSION="0.6.1"
+VERSION="0.6.2"
 
 backupdir="/etc /root"
 exclude=".bash_history,.local/share/Trash,.thumbnails,/etc/fstab,/etc/hostname,*cache*,*Cache*,*tmp*,*.log*,*.old"
@@ -31,21 +31,26 @@ source backuprc 2>/dev/null
 print_help() {
     cat << EOF
 $MYNAME $VERSION, backup and restore files on the computer.
-Useage: $MYNAME [OPTION]
+Useage: $MYNAME [OPTION]...
 
 Interface:
-    -q, --quiet                          keep quiet
+    -q, --quiet                 keep quiet
 
 Backup & Restore:
-    -o, --output [/path/to/directory]    output files to the specified directory
-    -r, --restore [/path/to/md5file]  restore
+        --file                  files or directories is backed up
+        --exclude               excluded files or directories
+        --compression           compression type
+        --pkgmgr                the package manager is used (dpkg, pacman, none)
+        --owner                 owner of the backup files ("root:root")
+    -o, --output                output files to the specified directory
+    -r, --restore               restore ([/path/to/mad5file])
 
 Check:
-    -c, --check [/path/to/md5file]    check the file
+    -c, --check                 check the file ([/path/to/mad5file])
 
 Miscellaneous:
-    -h, --help                           display this help and exit
-    -V, --version                        print version information and exit
+    -h, --help                  display this help and exit
+    -V, --version               print version information
 
 Written by Laurence Liu <liuxy6@gmail.com>
 EOF
@@ -125,7 +130,7 @@ then
     exit 0
 fi
 
-ARGS=`getopt -n $MYNAME -o "qo:r:c:hV" -l "quiet,output:,restore:,check:,help,version" -- "$@"`
+ARGS=`getopt -n $MYNAME -o "q     o:r:c:hV" -l "quiet,file:,exclude:,compression:,pkgmgr:,owner:,output:,restore:,check:,help,version" -- "$@"`
 eval set -- "${ARGS}"
 
 while true
@@ -134,6 +139,26 @@ do
         -q | --quiet )
             quiet=""
             if [ $2 = "--" ]; then backup .; fi
+            ;;
+        --file )
+            shift
+            backupdir=$1
+            ;;
+        --exclude )
+            shift
+            exclude=$1
+            ;;
+        --compression )
+            shift
+            compressed_ext=$1
+            ;;
+        --pkgmgr )
+            shift
+            pkgmgr=$1
+            ;;
+        --owner )
+            shift
+            owner=$1
             ;;
         -o | --output )
             shift
