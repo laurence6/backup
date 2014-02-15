@@ -12,7 +12,7 @@ exclude=".bash_history,.local/share/Trash,.thumbnails,/etc/fstab,/etc/hostname,*
 compressed_ext="gz"
 
 # Backup installed packages list (dpkg, pacman, none)
-pkgmgr="dpkg"
+pkgmgr="none"
 
 # Backup owner
 owner="root:root"
