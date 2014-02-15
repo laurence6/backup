@@ -16,7 +16,7 @@
 ####################
 
 MYNAME=`basename "$0"`
-VERSION="0.6.2"
+VERSION="0.6.3"
 
 backupdir="/etc /root"
 exclude=".bash_history,.local/share/Trash,.thumbnails,/etc/fstab,/etc/hostname,*cache*,*Cache*,*tmp*,*.log*,*.old"
@@ -37,7 +37,7 @@ Interface:
     -q, --quiet                 keep quiet
 
 Backup & Restore:
-        --file                  files or directories is backed up
+        --file                  files or directories will be backed up
         --exclude               excluded files or directories
         --compression           compression type
         --pkgmgr                the package manager is used (dpkg, pacman, none)
@@ -123,22 +123,19 @@ restore() {
 ####################
 
 quiet="v"
+br="b"
 
-if [ $# = 0 ]
-then
-    backup .
-    exit 0
-fi
-
-ARGS=`getopt -n $MYNAME -o "q     o:r:c:hV" -l "quiet,file:,exclude:,compression:,pkgmgr:,owner:,output:,restore:,check:,help,version" -- "$@"`
+ARGS=`getopt -n $MYNAME -o "nq     o:r:c:hV" -l ",quiet,file:,exclude:,compression:,pkgmgr:,owner:,output:,restore:,check:,help,version" -- "$@"`
 eval set -- "${ARGS}"
 
 while true
 do
     case $1 in
+        -n )
+            br="n"
+            ;;
         -q | --quiet )
             quiet=""
-            if [ $2 = "--" ]; then backup .; fi
             ;;
         --file )
             shift
@@ -163,7 +160,7 @@ do
         -o | --output )
             shift
             backup $1
-            break
+            exit 0
             ;;
         -r | --restore )
             shift
@@ -174,10 +171,10 @@ do
                 case $REPLY in
                     y | Y )
                         restore $1
-                        break
+                        exit 0
                         ;;
                     n | N | "" )
-                        break
+                        exit 0
                         ;;
                 esac
             done
@@ -185,20 +182,22 @@ do
         -c | --check )
             shift
             check $1
-            break
+            exit 0
             ;;
         -h | --help )
             print_help
-            break
+            exit 0
             ;;
         -V | --version )
             echo -e "$MYNAME $VERSION\nWritten by Laurence Liu <liuxy6@gmail.com>"
-            break
+            exit 0
             ;;
-         -- )
+        -- )
             shift
             break
             ;;
     esac
     shift
 done
+
+if [ $br = b ]; then backup .; fi
