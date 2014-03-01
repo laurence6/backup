@@ -16,7 +16,7 @@
 ####################
 
 MYNAME=`basename "$0"`
-VERSION="0.6.3"
+VERSION="0.6.4"
 
 backupdir="/etc /root"
 exclude=".bash_history,.local/share/Trash,.thumbnails,/etc/fstab,/etc/hostname,*cache*,*Cache*,*tmp*,*.log*,*.old"
@@ -103,9 +103,11 @@ restore() {
     packagelist_filename=`awk '/packagelist/ {print $2}' $1`
     case "$pkgmgr" in
         pacman )
+            pacman -Syy
             pacman -S --needed `diff <(cat $packagelist_filename|sort) <(diff <(cat $packagelist_filename|sort) <(pacman -Slq|sort)|grep \<|cut -f2 -d' ')|grep \<|cut -f2 -d' '`
             ;;
         dpkg )
+            apt-get update
             dpkg --set-selections <$TIME.packagelist.txt
             apt-get -u dselect-upgrade
             ;;
