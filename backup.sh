@@ -16,7 +16,7 @@
 ####################
 
 MYNAME=`basename "$0"`
-VERSION="0.6.4"
+VERSION="0.6.5"
 
 backupdir="/etc /root"
 exclude=".bash_history,.local/share/Trash,.thumbnails,/etc/fstab,/etc/hostname,*cache*,*Cache*,*tmp*,*.log*,*.old"
@@ -72,10 +72,11 @@ check() {
 
 backup() {
     check_root
-    TIME=`date +%F-%H-%M-%S`
-    echo -e "[$TIME] $MYNAME $VERSION: Backup begins."
+    TIME=`date +%F`
+#    TIME=`date +%F-%H-%M-%S`
+    echo -e "[`date +%F-%H:%M:%S`] $MYNAME $VERSION: Backup begins."
         cd $1
-        eval tar -pa$quiet -cf $TIME.files.tar.$compressed_ext $backupdir --exclude="{$exclude}" 2>/dev/null
+        eval tar -pa$quiet -cf $TIME.files.tar.$compressed_ext $backupdir --exclude="{..,$exclude}" 2>/dev/null
         case "$pkgmgr" in
             pacman )
                 comm -23 <(pacman -Qeq|sort) <(pacman -Qmq|sort) >$TIME.packagelist.txt
@@ -92,7 +93,7 @@ backup() {
         esac
         md5sum $TIME.files.tar.$compressed_ext $TIME.packagelist.txt >$TIME.md5
         chown $owner $TIME.files.tar.$compressed_ext $TIME.packagelist.txt $TIME.md5
-    echo -e "[`date +%F-%H-%M-%S`] $MYNAME $VERSION: Complete."
+    echo -e "[`date +%F-%H:%M:%S`] $MYNAME $VERSION: Complete."
 }
 
 restore() {
