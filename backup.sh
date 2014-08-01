@@ -16,7 +16,7 @@
 ####################
 
 MYNAME=`basename "$0"`
-VERSION="0.6.5"
+VERSION="0.6.6"
 
 backupdir="/etc /root"
 exclude=".bash_history,.local/share/Trash,.thumbnails,/etc/fstab,/etc/hostname,*cache*,*Cache*,*tmp*,*.log*,*.old"
@@ -109,7 +109,7 @@ restore() {
             ;;
         dpkg )
             apt-get update
-            dpkg --set-selections <$TIME.packagelist.txt
+            dpkg --set-selections <$packagelist_filename
             apt-get -u dselect-upgrade
             ;;
         none )
