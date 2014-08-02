@@ -16,7 +16,7 @@
 ####################
 
 MYNAME=`basename "$0"`
-VERSION="0.6.6"
+VERSION="0.6.7"
 
 backupdir="/etc /root"
 exclude=".bash_history,.local/share/Trash,.thumbnails,/etc/fstab,/etc/hostname,*cache*,*Cache*,*tmp*,*.log*,*.old"
@@ -43,10 +43,10 @@ Backup & Restore:
         --pkgmgr                the package manager is used (dpkg, pacman, none)
         --owner                 owner of the backup files ("root:root")
     -o, --output                output files to the specified directory
-    -r, --restore               restore ([/path/to/mad5file])
+    -r, --restore               restore ([/path/to/md5file])
 
 Check:
-    -c, --check                 check the file ([/path/to/mad5file])
+    -c, --check                 check the file ([/path/to/md5file])
 
 Miscellaneous:
     -h, --help                  display this help and exit
