@@ -8,8 +8,12 @@
 # Requirements:
 # - tar
 # - md5sum
+# - dpkg (debian)
+# - dselect (debian)
+# - apt (debian)
+# - pacman (arch)
 #
-# TODO: GUI
+# TODO: restore on Debian
 # TODO: options
 #
 
@@ -73,7 +77,7 @@ check() {
 backup() {
     check_root
     TIME=`date +%F`
-#    TIME=`date +%F-%H-%M-%S`
+#   TIME=`date +%F-%H-%M-%S`
     echo -e "[`date +%F-%H:%M:%S`] $MYNAME $VERSION: Backup begins."
         cd $1
         eval tar -pa$quiet -cf $TIME.files.tar.$compressed_ext $backupdir --exclude="{..,$exclude}" 2>/dev/null
