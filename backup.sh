@@ -13,14 +13,13 @@
 # - apt (debian)
 # - pacman (arch)
 #
-# TODO: restore on Debian
 # TODO: options
 #
 
 ####################
 
 MYNAME=`basename "$0"`
-VERSION="0.6.7"
+VERSION="0.7.0"
 
 backupdir="/etc /root"
 exclude=".bash_history,.local/share/Trash,.thumbnails,/etc/fstab,/etc/hostname,*cache*,*Cache*,*tmp*,*.log*,*.old"
@@ -113,8 +112,10 @@ restore() {
             ;;
         dpkg )
             apt-get update
+            if [ !-x `which dselect` ]; then apt-get install dselect; fi
+            dselect update
             dpkg --set-selections <$packagelist_filename
-            apt-get -u dselect-upgrade
+            apt-get dselect-upgrade
             ;;
         none )
             echo "Have no package manager"
