@@ -16,10 +16,8 @@
 # TODO: options
 #
 
-####################
-
 MYNAME=`basename "$0"`
-VERSION="0.7.0"
+VERSION="0.7.1"
 
 backupdir="/etc /root"
 exclude=".bash_history,.local/share/Trash,.thumbnails,/etc/fstab,/etc/hostname,*cache*,*Cache*,*tmp*,*.log*,*.old"
@@ -28,8 +26,6 @@ pkgmgr="none"
 owner="root:root"
 source /etc/backuprc 2>/dev/null
 source backuprc 2>/dev/null
-
-####################
 
 print_help() {
     cat << EOF
@@ -128,84 +124,82 @@ restore() {
     echo -e "$MYNAME $VERSION: Complete."
 }
 
-####################
+main() {
+    quiet="v"
 
-quiet="v"
-br="b"
+    while true
+    do
+        case $1 in
+            -q | --quiet )
+                quiet=""
+                ;;
+            --file )
+                shift
+                backupdir=$1
+                ;;
+            --exclude )
+                shift
+                exclude=$1
+                ;;
+            --compression )
+                shift
+                compressed_ext=$1
+                ;;
+            --pkgmgr )
+                shift
+                pkgmgr=$1
+                ;;
+            --owner )
+                shift
+                owner=$1
+                ;;
+            -o | --output )
+                shift
+                backup $1
+                exit 0
+                ;;
+            -r | --restore )
+                shift
+                while true
+                do
+                    read -s -n1 -p "Are you sure to restore all files (It will be dangerous)? [y/N]"
+                    echo -e ""
+                    case $REPLY in
+                        y | Y )
+                            restore $1
+                            exit 0
+                            ;;
+                        n | N | "" )
+                            exit 0
+                            ;;
+                    esac
+                done
+                ;;
+            -c | --check )
+                shift
+                check $1
+                exit 0
+                ;;
+            -h | --help )
+                print_help
+                exit 0
+                ;;
+            -V | --version )
+                echo -e "$MYNAME $VERSION\nWritten by Laurence Liu <liuxy6@gmail.com>"
+                exit 0
+                ;;
+            -- )
+                shift
+                break
+                ;;
+        esac
+        shift
+    done
+
+    backup .
+}
 
 ARGS=`getopt -n $MYNAME -o "nq     o:r:c:hV" -l ",quiet,file:,exclude:,compression:,pkgmgr:,owner:,output:,restore:,check:,help,version" -- "$@"`
 eval set -- "${ARGS}"
 
-while true
-do
-    case $1 in
-        -n )
-            br="n"
-            ;;
-        -q | --quiet )
-            quiet=""
-            ;;
-        --file )
-            shift
-            backupdir=$1
-            ;;
-        --exclude )
-            shift
-            exclude=$1
-            ;;
-        --compression )
-            shift
-            compressed_ext=$1
-            ;;
-        --pkgmgr )
-            shift
-            pkgmgr=$1
-            ;;
-        --owner )
-            shift
-            owner=$1
-            ;;
-        -o | --output )
-            shift
-            backup $1
-            exit 0
-            ;;
-        -r | --restore )
-            shift
-            while true
-            do
-                read -s -n1 -p "Are you sure to restore all files (It will be dangerous)? [y/N]"
-                echo -e ""
-                case $REPLY in
-                    y | Y )
-                        restore $1
-                        exit 0
-                        ;;
-                    n | N | "" )
-                        exit 0
-                        ;;
-                esac
-            done
-            ;;
-        -c | --check )
-            shift
-            check $1
-            exit 0
-            ;;
-        -h | --help )
-            print_help
-            exit 0
-            ;;
-        -V | --version )
-            echo -e "$MYNAME $VERSION\nWritten by Laurence Liu <liuxy6@gmail.com>"
-            exit 0
-            ;;
-        -- )
-            shift
-            break
-            ;;
-    esac
-    shift
-done
-
-if [ $br = b ]; then backup .; fi
+main $@
