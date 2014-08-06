@@ -16,8 +16,8 @@
 # TODO: options
 #
 
-MYNAME=`basename "$0"`
-VERSION="0.7.1"
+readonly MYNAME=`basename "$0"`
+readonly VERSION="0.7.2"
 
 backupdir="/etc /root"
 exclude=".bash_history,.local/share/Trash,.thumbnails,/etc/fstab,/etc/hostname,*cache*,*Cache*,*tmp*,*.log*,*.old"
@@ -71,7 +71,7 @@ check() {
 
 backup() {
     check_root
-    TIME=`date +%F`
+    local TIME=`date +%F`
 #   TIME=`date +%F-%H-%M-%S`
     echo -e "[`date +%F-%H:%M:%S`] $MYNAME $VERSION: Backup begins."
         cd $1
@@ -99,7 +99,7 @@ restore() {
     check $1
     check_root
     cd `dirname $1`
-    files_filename=`awk '/tar/ {print $2}' $1`
+    files_filename=`awk '/files/ {print $2}' $1`
     packagelist_filename=`awk '/packagelist/ {print $2}' $1`
     case "$pkgmgr" in
         pacman )
