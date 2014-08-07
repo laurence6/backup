@@ -17,7 +17,7 @@
 #
 
 readonly MYNAME=`basename "$0"`
-readonly VERSION="0.7.2"
+readonly VERSION="0.7.3"
 
 backupdir="/etc /root"
 exclude=".bash_history,.local/share/Trash,.thumbnails,/etc/fstab,/etc/hostname,*cache*,*Cache*,*tmp*,*.log*,*.old"
@@ -64,9 +64,11 @@ check_root() {
 }
 
 check() {
-    cd `dirname $1`
-    md5sum -c `basename $1`
-    if [ $? != 0 ]; then exit 1; fi
+    set -e
+    md5file_dirname=`dirname $1`
+    md5file_filename=`basename $1`
+    cd $md5file_dirname
+    md5sum -c $md5file_filename || exit 1
 }
 
 backup() {
