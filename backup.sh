@@ -17,7 +17,7 @@
 #
 
 readonly MYNAME=`basename "$0"`
-readonly VERSION="0.7.3"
+readonly VERSION="0.7.4"
 
 backupdir="/etc /root"
 exclude=".bash_history,.local/share/Trash,.thumbnails,/etc/fstab,/etc/hostname,*cache*,*Cache*,*tmp*,*.log*,*.old"
@@ -72,6 +72,7 @@ check() {
 }
 
 backup() {
+    set -e
     check_root
     local TIME=`date +%F`
 #   TIME=`date +%F-%H-%M-%S`
@@ -98,6 +99,7 @@ backup() {
 }
 
 restore() {
+    set -e
     check $1
     check_root
     cd `dirname $1`
@@ -157,8 +159,8 @@ main() {
                 ;;
             -o | --output )
                 shift
-                backup $1
-                exit 0
+                backup $1\
+                    && exit 0
                 ;;
             -r | --restore )
                 shift
@@ -168,8 +170,8 @@ main() {
                     echo -e ""
                     case $REPLY in
                         y | Y )
-                            restore $1
-                            exit 0
+                            restore $1\
+                                && exit 0
                             ;;
                         n | N | "" )
                             exit 0
@@ -179,16 +181,16 @@ main() {
                 ;;
             -c | --check )
                 shift
-                check $1
-                exit 0
+                check $1\
+                    && exit 0
                 ;;
             -h | --help )
-                print_help
-                exit 0
+                print_help\
+                    && exit 0
                 ;;
             -V | --version )
-                echo -e "$MYNAME $VERSION\nWritten by Laurence Liu <liuxy6@gmail.com>"
-                exit 0
+                echo -e "$MYNAME $VERSION\nWritten by Laurence Liu <liuxy6@gmail.com>"\
+                    && exit 0
                 ;;
             -- )
                 shift
@@ -201,7 +203,8 @@ main() {
     backup .
 }
 
-ARGS=`getopt -n $MYNAME -o "nq     o:r:c:hV" -l ",quiet,file:,exclude:,compression:,pkgmgr:,owner:,output:,restore:,check:,help,version" -- "$@"`
+ARGS=`getopt -n $MYNAME -o "nq     o:r:c:hV" -l ",quiet,file:,exclude:,compression:,pkgmgr:,owner:,output:,restore:,check:,help,version" -- "$@"`\
+    || exit 1
 eval set -- "${ARGS}"
 
 main $@
