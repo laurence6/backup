@@ -17,7 +17,7 @@
 #
 
 readonly MYNAME=`basename "$0"`
-readonly VERSION="0.7.4"
+readonly VERSION="0.7.5"
 
 backupdir="/etc /root"
 exclude=".bash_history,.local/share/Trash,.thumbnails,/etc/fstab,/etc/hostname,*cache*,*Cache*,*tmp*,*.log*,*.old"
@@ -102,20 +102,32 @@ restore() {
     set -e
     check $1
     check_root
-    cd `dirname $1`
-    files_filename=`awk '/files/ {print $2}' $1`
-    packagelist_filename=`awk '/packagelist/ {print $2}' $1`
+    files_filename=`awk '/files/ {print $2}' $md5file_filename`
+    packagelist_filename=`awk '/packagelist/ {print $2}' $md5file_filename`
     case "$pkgmgr" in
         pacman )
             pacman -Syy
-            pacman -S --needed `diff <(cat $packagelist_filename|sort) <(diff <(cat $packagelist_filename|sort) <(pacman -Slq|sort)|grep \<|cut -f2 -d' ')|grep \<|cut -f2 -d' '`
+            pacman -S --needed \
+                `diff <(cat $packagelist_filename|sort) <(diff <(cat $packagelist_filename|sort) <(pacman -Slq|sort)|grep \<|cut -f2 -d' ')|grep \<|cut -f2 -d' '`
             ;;
         dpkg )
             apt-get update
-            if [ !-x `which dselect` ]; then apt-get install dselect; fi
+            if [ "x" = "x$(which dselect)" ]
+            then
+                echo "dselect is required" >&2
+                read -s -n1 -p "Do you want to install dselect? [Y/n]"
+                echo -e ""
+                if [ "$REPLY" = "y" -o "$REPLY" = "Y" -o "$REPLY" = "" ]
+                then
+                    apt-get install dselect
+                fi
+                [ "x" != "x$(which dselect)" ]\
+                    && true\
+                    || echo -e "dselect is not installed" >&2 && exit 1
+            fi
             dselect update
             dpkg --set-selections <$packagelist_filename
-            apt-get dselect-upgrade
+            apt-get --show-progress dselect-upgrade
             ;;
         none )
             echo "Have no package manager"
