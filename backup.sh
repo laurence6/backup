@@ -17,7 +17,7 @@
 #
 
 readonly MYNAME=`basename "$0"`
-readonly VERSION="0.7.5"
+readonly VERSION="0.7.6"
 
 backupdir="/etc /root"
 exclude=".bash_history,.local/share/Trash,.thumbnails,/etc/fstab,/etc/hostname,*cache*,*Cache*,*tmp*,*.log*,*.old"
@@ -56,11 +56,9 @@ EOF
 }
 
 check_root() {
-    if [ $UID != 0 ]
-    then
-        echo -e "Non root user. Please run as root." >&2
-        exit 1
-    fi
+    [ $UID != 0 ]\
+        && echo -e "Non root user. Please run as root." >&2\
+        && exit 1
 }
 
 check() {
