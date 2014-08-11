@@ -17,7 +17,7 @@
 #
 
 readonly MYNAME=`basename "$0"`
-readonly VERSION="0.7.6"
+readonly VERSION="0.7.7"
 
 backupdir="/etc /root"
 exclude=".bash_history,.local/share/Trash,.thumbnails,/etc/fstab,/etc/hostname,*cache*,*Cache*,*tmp*,*.log*,*.old"
@@ -98,8 +98,16 @@ backup() {
 
 restore() {
     set -e
-    check $1
     check_root
+    check $1
+    read -s -n1 -p "Are you sure to restore all files (It will be dangerous)? [y/N]"
+    echo -e ""
+    if [ "$REPLY" = "y" -o  "$REPLY" = "Y" ]
+    then
+        true
+    else
+        return 0
+    fi
     files_filename=`awk '/files/ {print $2}' $md5file_filename`
     packagelist_filename=`awk '/packagelist/ {print $2}' $md5file_filename`
     case "$pkgmgr" in
@@ -174,20 +182,8 @@ main() {
                 ;;
             -r | --restore )
                 shift
-                while true
-                do
-                    read -s -n1 -p "Are you sure to restore all files (It will be dangerous)? [y/N]"
-                    echo -e ""
-                    case $REPLY in
-                        y | Y )
-                            restore $1\
-                                && exit 0
-                            ;;
-                        n | N | "" )
-                            exit 0
-                            ;;
-                    esac
-                done
+                restore $1\
+                    && exit 0
                 ;;
             -c | --check )
                 shift
