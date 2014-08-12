@@ -17,7 +17,7 @@
 #
 
 readonly MYNAME=`basename "$0"`
-readonly VERSION="0.7.7"
+readonly VERSION="0.7.8"
 
 backupdir="/etc /root"
 exclude=".bash_history,.local/share/Trash,.thumbnails,/etc/fstab,/etc/hostname,*cache*,*Cache*,*tmp*,*.log*,*.old"
@@ -56,9 +56,10 @@ EOF
 }
 
 check_root() {
-    [ $UID != 0 ]\
+    [ $UID != "0" ]\
         && echo -e "Non root user. Please run as root." >&2\
-        && exit 1
+        && exit 1\
+        || return 0
 }
 
 check() {
@@ -148,6 +149,7 @@ restore() {
 
 main() {
     quiet="v"
+    outputdir="."
 
     while true
     do
@@ -177,8 +179,7 @@ main() {
                 ;;
             -o | --output )
                 shift
-                backup $1\
-                    && exit 0
+                outputdir=$1
                 ;;
             -r | --restore )
                 shift
@@ -206,7 +207,7 @@ main() {
         shift
     done
 
-    backup .
+    backup $outputdir
 }
 
 ARGS=`getopt -n $MYNAME -o "nq     o:r:c:hV" -l ",quiet,file:,exclude:,compression:,pkgmgr:,owner:,output:,restore:,check:,help,version" -- "$@"`\
