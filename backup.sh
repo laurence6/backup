@@ -17,7 +17,7 @@
 #
 
 readonly MYNAME=`basename "$0"`
-readonly VERSION="0.7.8"
+readonly VERSION="0.7.9"
 
 backupdir="/etc /root"
 exclude=".bash_history,.local/share/Trash,.thumbnails,/etc/fstab,/etc/hostname,*cache*,*Cache*,*tmp*,*.log*,*.old"
@@ -64,9 +64,9 @@ check_root() {
 
 check() {
     set -e
-    md5file_dirname=`dirname $1`
-    md5file_filename=`basename $1`
-    cd $md5file_dirname
+    md5file_dirname=`dirname $1` || exit 1
+    md5file_filename=`basename $1` || exit 1
+    cd $md5file_dirname || exit 1
     md5sum -c $md5file_filename || exit 1
 }
 
@@ -76,7 +76,7 @@ backup() {
     local TIME=`date +%F`
 #   TIME=`date +%F-%H-%M-%S`
     echo -e "[`date +%F-%H:%M:%S`] $MYNAME $VERSION: Backup begins."
-        cd $1
+        cd $1 || exit 1
         eval tar -pa$quiet -cf $TIME.files.tar.$compressed_ext $backupdir --exclude="{..,$exclude}" 2>/dev/null
         case "$pkgmgr" in
             pacman )
@@ -86,10 +86,10 @@ backup() {
                 dpkg --get-selections >$TIME.packagelist.txt
                 ;;
             none )
-                echo "Have no package manager"
+                echo -e "Have no package manager"
                 ;;
             * )
-                echo "Unknown package manager type"
+                echo -e "Unknown package manager type"
                 ;;
         esac
         md5sum $TIME.files.tar.$compressed_ext $TIME.packagelist.txt >$TIME.md5
@@ -109,19 +109,23 @@ restore() {
     else
         return 0
     fi
-    files_filename=`awk '/files/ {print $2}' $md5file_filename`
-    packagelist_filename=`awk '/packagelist/ {print $2}' $md5file_filename`
+    files_filename=`awk '/files/ {print $2}' $md5file_filename` || exit 1
+    packagelist_filename=`awk '/packagelist/ {print $2}' $md5file_filename` || exit 1
     case "$pkgmgr" in
         pacman )
             pacman -Syy
             pacman -S --needed \
-                `diff <(cat $packagelist_filename|sort) <(diff <(cat $packagelist_filename|sort) <(pacman -Slq|sort)|grep \<|cut -f2 -d' ')|grep \<|cut -f2 -d' '`
+                `diff <(cat $packagelist_filename|sort)\
+                <(diff <(cat $packagelist_filename|sort)\
+                <(pacman -Slq|sort)\
+                |grep \<|cut -f2 -d' ')\
+                |grep \<|cut -f2 -d' '`
             ;;
         dpkg )
             apt-get update
             if [ "x" = "x$(which dselect)" ]
             then
-                echo "dselect is required" >&2
+                echo -e "dselect is required" >&2
                 read -s -n1 -p "Do you want to install dselect? [Y/n]"
                 echo -e ""
                 if [ "$REPLY" = "y" -o "$REPLY" = "Y" -o "$REPLY" = "" ]
@@ -133,14 +137,14 @@ restore() {
                     || echo -e "dselect is not installed" >&2 && exit 1
             fi
             dselect update
-            dpkg --set-selections <$packagelist_filename
+            dpkg --set-selections <$packagelist_filename || exit 1
             apt-get --show-progress dselect-upgrade
             ;;
         none )
-            echo "Have no package manager"
+            echo -e "Have no package manager"
             ;;
         * )
-            echo "Unknown package manager type"
+            echo -e "Unknown package manager type"
             ;;
     esac
     eval tar -pa$quiet -xf $files_filename -C /
