@@ -17,7 +17,7 @@
 #
 
 readonly MYNAME=`basename "$0"`
-readonly VERSION="0.7.9"
+readonly VERSION="0.8.0"
 
 backupdir="/etc /root"
 exclude=".bash_history,.local/share/Trash,.thumbnails,/etc/fstab,/etc/hostname,*cache*,*Cache*,*tmp*,*.log*,*.old"
@@ -27,32 +27,42 @@ owner="root:root"
 source /etc/backuprc 2>/dev/null
 source backuprc 2>/dev/null
 
+colors() {
+    NORM='\e[00m'
+    RED='\e[00;31m'
+    GREEN='\e[00;32m'
+    YELLOW='\e[00;33m'
+    BLUE='\e[00;34m'
+    MAGENTA='\e[00;35m'
+    CYAN='\e[00;36m'
+    BOLD='\033[1m'
+}
+
 print_help() {
-    cat << EOF
-$MYNAME $VERSION, backup and restore files on the computer.
+echo -e "$MYNAME $VERSION, backup and restore files on the computer.
 Useage: $MYNAME [OPTION]...
 
 Interface:
-    -q, --quiet                 keep quiet
+    -q, --quiet            keep quiet
+        --nocolor          disable colors
 
 Backup & Restore:
-        --file                  files or directories will be backed up
-        --exclude               excluded files or directories
-        --compression           compression type
-        --pkgmgr                the package manager is used (dpkg, pacman, none)
-        --owner                 owner of the backup files ("root:root")
-    -o, --output                output files to the specified directory
-    -r, --restore               restore ([/path/to/md5file])
+        --file             files or directories will be backed up
+        --exclude          excluded files or directories
+        --compression      compression type
+        --pkgmgr           the package manager is used (dpkg, pacman, none)
+        --owner            owner of the backup files (owner:group)
+    -o, --output           output files to the specified directory
+    -r, --restore          restore (/path/to/md5file)
 
 Check:
-    -c, --check                 check the file ([/path/to/md5file])
+    -c, --check            check the file (/path/to/md5file)
 
 Miscellaneous:
-    -h, --help                  display this help and exit
-    -V, --version               print version information
+    -h, --help             display this help and exit
+    -V, --version          print version information
 
-Written by Laurence Liu <liuxy6@gmail.com>
-EOF
+Written by Laurence Liu <liuxy6@gmail.com>"
 }
 
 check_root() {
@@ -154,12 +164,16 @@ restore() {
 main() {
     quiet="v"
     outputdir="."
+    colors
 
     while true
     do
         case $1 in
             -q | --quiet )
                 quiet=""
+                ;;
+            --nocolor )
+                unset NORM RED GREEN YELLOW BLUE MAGENTA CYAN BOLD
                 ;;
             --file )
                 shift
@@ -214,7 +228,7 @@ main() {
     backup $outputdir
 }
 
-ARGS=`getopt -n $MYNAME -o "nq     o:r:c:hV" -l ",quiet,file:,exclude:,compression:,pkgmgr:,owner:,output:,restore:,check:,help,version" -- "$@"`\
+ARGS=`getopt -n $MYNAME -o "q      o:r:c:hV" -l "quiet,nocolor,file:,exclude:,compression:,pkgmgr:,owner:,output:,restore:,check:,help,version" -- "$@"`\
     || exit 1
 eval set -- "${ARGS}"
 
