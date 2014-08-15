@@ -17,7 +17,7 @@
 #
 
 readonly MYNAME=`basename "$0"`
-readonly VERSION="0.8.0"
+readonly VERSION="0.8.1"
 
 backupdir="/etc /root"
 exclude=".bash_history,.local/share/Trash,.thumbnails,/etc/fstab,/etc/hostname,*cache*,*Cache*,*tmp*,*.log*,*.old"
@@ -29,18 +29,18 @@ source backuprc 2>/dev/null
 
 colors() {
     NORM='\e[00m'
-    RED='\e[00;31m'
-    GREEN='\e[00;32m'
-    YELLOW='\e[00;33m'
-    BLUE='\e[00;34m'
-    MAGENTA='\e[00;35m'
-    CYAN='\e[00;36m'
-    BOLD='\033[1m'
+    RED='\e[01;31m'
+    GREEN='\e[01;32m'
+    YELLOW='\e[01;33m'
+    BLUE='\e[01;34m'
+    MAGENTA='\e[01;35m'
+    CYAN='\e[01;36m'
+    BOLD='\033[01m'
 }
 
 print_help() {
-echo -e "$MYNAME $VERSION, backup and restore files on the computer.
-Useage: $MYNAME [OPTION]...
+echo -e ""$MYNAME" "$VERSION", backup and restore files on the computer.
+Useage: "$MYNAME" [OPTION]...
 
 Interface:
     -q, --quiet            keep quiet
@@ -74,10 +74,10 @@ check_root() {
 
 check() {
     set -e
-    md5file_dirname=`dirname $1` || exit 1
-    md5file_filename=`basename $1` || exit 1
-    cd $md5file_dirname || exit 1
-    md5sum -c $md5file_filename || exit 1
+    md5file_dirname=`dirname "$1"` || exit 1
+    md5file_filename=`basename "$1"` || exit 1
+    cd "$md5file_dirname" || exit 1
+    md5sum -c "$md5file_filename" || exit 1
 }
 
 backup() {
@@ -85,9 +85,9 @@ backup() {
     check_root
     local TIME=`date +%F`
 #   TIME=`date +%F-%H-%M-%S`
+    cd "$1" || exit 1
     echo -e "[`date +%F-%H:%M:%S`] $MYNAME $VERSION: Backup begins."
-        cd $1 || exit 1
-        eval tar -pa$quiet -cf $TIME.files.tar.$compressed_ext $backupdir --exclude="{..,$exclude}" 2>/dev/null
+        eval tar -pa$quiet -cf $TIME.files.tar.$compressed_ext "$backupdir" --exclude="{..,$exclude}" 2>/dev/null
         case "$pkgmgr" in
             pacman )
                 comm -23 <(pacman -Qeq|sort) <(pacman -Qmq|sort) >$TIME.packagelist.txt
@@ -103,15 +103,16 @@ backup() {
                 ;;
         esac
         md5sum $TIME.files.tar.$compressed_ext $TIME.packagelist.txt >$TIME.md5
-        chown $owner $TIME.files.tar.$compressed_ext $TIME.packagelist.txt $TIME.md5
+        chown "$owner" $TIME.files.tar.$compressed_ext $TIME.packagelist.txt $TIME.md5
     echo -e "[`date +%F-%H:%M:%S`] $MYNAME $VERSION: Complete."
 }
 
 restore() {
     set -e
     check_root
-    check $1
-    read -s -n1 -p "Are you sure to restore all files (It will be dangerous)? [y/N]"
+    check "$1"
+    echo -ne "Are you sure to restore all files (It will be dangerous)? [y/N]"\
+        && read -s -n1
     echo -e ""
     if [ "$REPLY" = "y" -o  "$REPLY" = "Y" ]
     then
@@ -119,14 +120,18 @@ restore() {
     else
         return 0
     fi
-    files_filename=`awk '/files/ {print $2}' $md5file_filename` || exit 1
-    packagelist_filename=`awk '/packagelist/ {print $2}' $md5file_filename` || exit 1
+    files_filename=`awk '/[1-9][0-9][0-9][0-9]-[0-1][0-9]-[0-3][0-9].files.tar.[gz,xz,bz2]/ {print $2}' "$md5file_filename"` || exit 1
+    packagelist_filename=`awk '/[1-9][0-9][0-9][0-9]-[0-1][0-9]-[0-3][0-9].packagelist.txt/ {print $2}' "$md5file_filename"` || exit 1
+    [ "$files_filename" = "" -o "$packagelist_filename" = "" ]\
+        && echo "Cannot find backup files"\
+        && exit 1\
+        || true
     case "$pkgmgr" in
         pacman )
             pacman -Syy
             pacman -S --needed \
-                `diff <(cat $packagelist_filename|sort)\
-                <(diff <(cat $packagelist_filename|sort)\
+                `diff <(cat "$packagelist_filename"|sort)\
+                <(diff <(cat "$packagelist_filename"|sort)\
                 <(pacman -Slq|sort)\
                 |grep \<|cut -f2 -d' ')\
                 |grep \<|cut -f2 -d' '`
@@ -136,7 +141,8 @@ restore() {
             if [ "x" = "x$(which dselect)" ]
             then
                 echo -e "dselect is required" >&2
-                read -s -n1 -p "Do you want to install dselect? [Y/n]"
+                echo -e "Do you want to install dselect? [Y/n]"\
+                    && read -s -n1
                 echo -e ""
                 if [ "$REPLY" = "y" -o "$REPLY" = "Y" -o "$REPLY" = "" ]
                 then
@@ -144,10 +150,10 @@ restore() {
                 fi
                 [ "x" != "x$(which dselect)" ]\
                     && true\
-                    || echo -e "dselect is not installed" >&2 && exit 1
+                    || echo -e "dselect was not installed" >&2 && exit 1
             fi
             dselect update
-            dpkg --set-selections <$packagelist_filename || exit 1
+            dpkg --set-selections <"$packagelist_filename" || exit 1
             apt-get --show-progress dselect-upgrade
             ;;
         none )
@@ -157,7 +163,7 @@ restore() {
             echo -e "Unknown package manager type"
             ;;
     esac
-    eval tar -pa$quiet -xf $files_filename -C /
+    eval tar -pa$quiet -xf "$files_filename" -C /
     echo -e "$MYNAME $VERSION: Complete."
 }
 
@@ -168,7 +174,7 @@ main() {
 
     while true
     do
-        case $1 in
+        case "$1" in
             -q | --quiet )
                 quiet=""
                 ;;
@@ -177,36 +183,36 @@ main() {
                 ;;
             --file )
                 shift
-                backupdir=$1
+                backupdir="$1"
                 ;;
             --exclude )
                 shift
-                exclude=$1
+                exclude="$1"
                 ;;
             --compression )
                 shift
-                compressed_ext=$1
+                compressed_ext="$1"
                 ;;
             --pkgmgr )
                 shift
-                pkgmgr=$1
+                pkgmgr="$1"
                 ;;
             --owner )
                 shift
-                owner=$1
+                owner="$1"
                 ;;
             -o | --output )
                 shift
-                outputdir=$1
+                outputdir="$1"
                 ;;
             -r | --restore )
                 shift
-                restore $1\
+                restore "$1"\
                     && exit 0
                 ;;
             -c | --check )
                 shift
-                check $1\
+                check "$1"\
                     && exit 0
                 ;;
             -h | --help )
@@ -225,11 +231,11 @@ main() {
         shift
     done
 
-    backup $outputdir
+    backup "$outputdir"
 }
 
-ARGS=`getopt -n $MYNAME -o "q      o:r:c:hV" -l "quiet,nocolor,file:,exclude:,compression:,pkgmgr:,owner:,output:,restore:,check:,help,version" -- "$@"`\
+ARGS=`getopt -n "$MYNAME" -o "q      o:r:c:hV" -l "quiet,nocolor,file:,exclude:,compression:,pkgmgr:,owner:,output:,restore:,check:,help,version" -- "$@"`\
     || exit 1
 eval set -- "${ARGS}"
 
-main $@
+main "$@"
