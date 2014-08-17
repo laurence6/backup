@@ -8,6 +8,7 @@
 # Requirements:
 # - tar
 # - md5sum
+# - awk
 # - dpkg (debian)
 # - dselect (debian)
 # - apt (debian)
@@ -17,7 +18,7 @@
 #
 
 readonly MYNAME=`basename "$0"`
-readonly VERSION="0.8.2"
+readonly VERSION="0.8.3"
 
 backupdir="/etc /root"
 exclude=".bash_history,.local/share/Trash,.thumbnails,/etc/fstab,/etc/hostname,*cache*,*Cache*,*tmp*,*.log*,*.old"
@@ -28,6 +29,9 @@ source /etc/backuprc 2>/dev/null
 source backuprc 2>/dev/null
 
 colors() {
+    [ "x" = "x`echo $* | awk '/--nocolor/'`" ]\
+        && true\
+        || return 0
     NORM='\e[00m'
     RED='\e[01;31m'
     GREEN='\e[01;32m'
@@ -89,23 +93,27 @@ backup() {
 #   TIME=`date +%F-%H-%M-%S`
     echo -ne "${RED}" && cd "$1" && echo -ne "${NORM}" || exit 1
     echo -e "${GREEN}[`date +%F-%H:%M:%S`] $MYNAME $VERSION: Backup begins.${NORM}"
-        eval tar -pa$quiet -cf $TIME.files.tar.$compressed_ext "$backupdir" --exclude="{..,$exclude}" 2>/dev/null
-        case "$pkgmgr" in
-            pacman )
-                comm -23 <(pacman -Qeq|sort) <(pacman -Qmq|sort) >$TIME.packagelist.txt
-                ;;
-            dpkg )
-                dpkg --get-selections >$TIME.packagelist.txt
-                ;;
-            none )
-                echo -e "Have no package manager"
-                ;;
-            * )
-                echo -e "Unknown package manager type"
-                ;;
-        esac
-        md5sum $TIME.files.tar.$compressed_ext $TIME.packagelist.txt >$TIME.md5
-        chown "$owner" $TIME.files.tar.$compressed_ext $TIME.packagelist.txt $TIME.md5
+
+    eval tar -pa$quiet -cf $TIME.files.tar.$compressed_ext "$backupdir" --exclude="{..,$exclude}" 2>/dev/null
+    case "$pkgmgr" in
+        pacman )
+            comm -23 <(pacman -Qeq|sort) <(pacman -Qmq|sort) >$TIME.packagelist.txt
+            ;;
+        dpkg )
+            dpkg --get-selections >$TIME.packagelist.txt
+            ;;
+        none )
+            echo -e "Have no package manager"
+            ;;
+        * )
+            echo -e "Unknown package manager type"
+            ;;
+    esac
+
+    md5sum $TIME.files.tar.$compressed_ext $TIME.packagelist.txt >$TIME.md5
+
+    chown "$owner" $TIME.files.tar.$compressed_ext $TIME.packagelist.txt $TIME.md5
+
     echo -e "${GREEN}[`date +%F-%H:%M:%S`] $MYNAME $VERSION: Complete.${NORM}"
 }
 
@@ -113,6 +121,7 @@ restore() {
     set -e
     check_root
     check "$1"
+
     echo -ne "${YELLOW}Are you sure to restore all files (It will be dangerous)?${NORM} [y/N]"\
         && read -s -n1
     echo -e ""
@@ -122,6 +131,7 @@ restore() {
     else
         return 0
     fi
+
     echo -ne "${RED}"
     files_filename=`awk '/[1-9][0-9][0-9][0-9]-[0-1][0-9]-[0-3][0-9].files.tar.[gz,xz,bz2]/ {print $2}' "$md5file_filename"` || exit 1
     packagelist_filename=`awk '/[1-9][0-9][0-9][0-9]-[0-1][0-9]-[0-3][0-9].packagelist.txt/ {print $2}' "$md5file_filename"` || exit 1
@@ -130,6 +140,7 @@ restore() {
         && exit 1\
         || true
     echo -ne "${NORM}"
+
     case "$pkgmgr" in
         pacman )
             pacman -Syy
@@ -167,13 +178,23 @@ restore() {
             echo -e "${RED}Unknown package manager type${NORM}"
             ;;
     esac
+
     eval tar -pa$quiet -xf "$files_filename" -C /
+
     echo -e "${GREEN}$MYNAME $VERSION: Complete.${NORM}"
 }
 
 main() {
     quiet="v"
     outputdir="."
+
+    colors "$*"
+
+    echo -ne "${RED}"
+    ARGS=`getopt -n "$MYNAME" -o "q      o:r:c:hV" -l "quiet,nocolor,file:,exclude:,compression:,pkgmgr:,owner:,output:,restore:,check:,help,version" -- "$@"`\
+        || exit 1
+    eval set -- "${ARGS}"
+    echo -ne "${NORM}"
 
     while true
     do
@@ -182,7 +203,7 @@ main() {
                 quiet=""
                 ;;
             --nocolor )
-                unset NORM RED GREEN YELLOW BLUE MAGENTA CYAN BOLD
+                true
                 ;;
             --file )
                 shift
@@ -236,13 +257,5 @@ main() {
 
     backup "$outputdir"
 }
-
-colors
-
-echo -ne "${RED}"
-ARGS=`getopt -n "$MYNAME" -o "q      o:r:c:hV" -l "quiet,nocolor,file:,exclude:,compression:,pkgmgr:,owner:,output:,restore:,check:,help,version" -- "$@"`\
-    || exit 1
-eval set -- "${ARGS}"
-echo -ne "${NORM}"
 
 main "$@"
