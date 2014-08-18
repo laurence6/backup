@@ -18,7 +18,7 @@
 #
 
 readonly MYNAME=`basename "$0"`
-readonly VERSION="0.8.3"
+readonly VERSION="0.8.4"
 
 backupdir="/etc /root"
 exclude=".bash_history,.local/share/Trash,.thumbnails,/etc/fstab,/etc/hostname,*cache*,*Cache*,*tmp*,*.log*,*.old"
@@ -32,6 +32,7 @@ colors() {
     [ "x" = "x`echo $* | awk '/--nocolor/'`" ]\
         && true\
         || return 0
+
     NORM='\e[00m'
     RED='\e[01;31m'
     GREEN='\e[01;32m'
@@ -133,12 +134,11 @@ restore() {
     fi
 
     echo -ne "${RED}"
-    files_filename=`awk '/[1-9][0-9][0-9][0-9]-[0-1][0-9]-[0-3][0-9].files.tar.[gz,xz,bz2]/ {print $2}' "$md5file_filename"` || exit 1
-    packagelist_filename=`awk '/[1-9][0-9][0-9][0-9]-[0-1][0-9]-[0-3][0-9].packagelist.txt/ {print $2}' "$md5file_filename"` || exit 1
-    [ "$files_filename" = "" -o "$packagelist_filename" = "" ]\
-        && echo "Cannot find backup files"\
-        && exit 1\
-        || true
+    files_filename="`awk '$2 ~ /^[1-9][0-9][0-9][0-9]-[0-1][0-9]-[0-3][0-9].files.tar.(gz)$|(xz)$|(bz2)$/ {print $2}' "$md5file_filename"`" || exit 1
+    packagelist_filename="`awk '$2 ~ /^[1-9][0-9][0-9][0-9]-[0-1][0-9]-[0-3][0-9].packagelist.txt$/ {print $2}' "$md5file_filename"`" || exit 1
+    [ "$files_filename" != "" -a "$packagelist_filename" != "" ]\
+        && true\
+        || echo -e "Cannot find backup files" || exit 1
     echo -ne "${NORM}"
 
     case "$pkgmgr" in
