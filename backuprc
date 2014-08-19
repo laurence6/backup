@@ -3,16 +3,17 @@
 #
 
 # Backup these directories
-backupdir="/etc /root"
+files="/etc /root"
 
 # Exclude these files
-exclude=".bash_history,.local/share/Trash,.thumbnails,/etc/fstab,/etc/hostname,*cache*,*Cache*,*tmp*,*.log*,*.old"
+exclude=".bash_history .local/share/Trash .thumbnails /etc/fstab /etc/hostname *cache* *Cache* *tmp* *.log* *.old"
 
-# Compressed file extension (gz, xz, bz2)
-compressed_ext="gz"
+# Compression formats (gz, xz, bz2)
+compression="gz"
 
-# Backup installed packages list (dpkg, pacman, none)
+# Backup installed packages list
+# Package Manager (dpkg, pacman, none)
 pkgmgr="none"
 
-# Backup owner
+# Backup files owner
 owner="root:root"

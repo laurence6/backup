@@ -18,11 +18,11 @@
 #
 
 readonly MYNAME=`basename "$0"`
-readonly VERSION="0.8.4"
+readonly VERSION="0.9.0"
 
-backupdir="/etc /root"
-exclude=".bash_history,.local/share/Trash,.thumbnails,/etc/fstab,/etc/hostname,*cache*,*Cache*,*tmp*,*.log*,*.old"
-compressed_ext="gz"
+files="/etc /root"
+exclude=".bash_history .local/share/Trash .thumbnails /etc/fstab /etc/hostname *cache* *Cache* *tmp* *.log* *.old"
+compression="gz"
 pkgmgr="none"
 owner="root:root"
 source /etc/backuprc 2>/dev/null
@@ -52,12 +52,12 @@ Interface:
         --nocolor          disable colors
 
 Backup & Restore:
-        --file             files or directories will be backed up
-        --exclude          excluded files or directories
-        --compression      compression type
+        --files            files or directories will be backed up (\"/dir1 /dir2 /file1 ...\")
+        --exclude          excluded files or directories (\"/file1 /file2 /dir1...\")
+        --compression      compression type (gz, xz, bz2)
         --pkgmgr           the package manager is used (dpkg, pacman, none)
         --owner            owner of the backup files (owner:group)
-    -o, --output           output files to the specified directory
+    -o, --output           output files to the specified directory (/path/to/dir)
     -r, --restore          restore (/path/to/md5file)
 
 Check:
@@ -77,6 +77,39 @@ check_root() {
         || return 0
 }
 
+check_args() {
+    exclude=`echo "$exclude" | tr " " ","`
+
+    case $compression in
+        gzip | gnuzip | gz )
+            compression="gz"
+            ;;
+        xz )
+            true
+            ;;
+        bzip2 | bz2 )
+            compression="bz2"
+            ;;
+        * )
+            echo -e "${RED}Unknown compression format "$compression"${NORM}" >&2\
+                && exit 1
+            ;;
+    esac
+
+    case $pkgmgr in
+        dpkg | apt | apt-get | dselect )
+            pkgmgr="dpkg"
+            ;;
+        pacman | none)
+            true
+            ;;
+        * )
+            echo -e "${RED}Unknown package manager "$pkgmgr"${NORM}" >&2\
+                && exit 1
+            ;;
+    esac
+}
+
 check() {
     echo -ne "${RED}"
     set -e
@@ -88,14 +121,14 @@ check() {
 }
 
 backup() {
-    set -e
     check_root
+    check_args
     local TIME=`date +%F`
 #   TIME=`date +%F-%H-%M-%S`
     echo -ne "${RED}" && cd "$1" && echo -ne "${NORM}" || exit 1
     echo -e "${GREEN}[`date +%F-%H:%M:%S`] $MYNAME $VERSION: Backup begins.${NORM}"
 
-    eval tar -pa$quiet -cf $TIME.files.tar.$compressed_ext "$backupdir" --exclude="{..,$exclude}" 2>/dev/null
+    eval tar -pa$quiet -cf $TIME.files.tar.$compression "$files" --exclude="{..,$exclude}" 2>/dev/null
     case "$pkgmgr" in
         pacman )
             comm -23 <(pacman -Qeq|sort) <(pacman -Qmq|sort) >$TIME.packagelist.txt
@@ -104,16 +137,13 @@ backup() {
             dpkg --get-selections >$TIME.packagelist.txt
             ;;
         none )
-            echo -e "Have no package manager"
-            ;;
-        * )
-            echo -e "Unknown package manager type"
+            echo -e "${YELLOW}Have no package manager${NORM}"
             ;;
     esac
 
-    md5sum $TIME.files.tar.$compressed_ext $TIME.packagelist.txt >$TIME.md5
+    md5sum $TIME.files.tar.$compression $TIME.packagelist.txt >$TIME.md5 2>/dev/null
 
-    chown "$owner" $TIME.files.tar.$compressed_ext $TIME.packagelist.txt $TIME.md5
+    chown "$owner" $TIME.files.tar.$compression $TIME.packagelist.txt $TIME.md5 2>/dev/null
 
     echo -e "${GREEN}[`date +%F-%H:%M:%S`] $MYNAME $VERSION: Complete.${NORM}"
 }
@@ -121,6 +151,7 @@ backup() {
 restore() {
     set -e
     check_root
+    check_args
     check "$1"
 
     echo -ne "${YELLOW}Are you sure to restore all files (It will be dangerous)?${NORM} [y/N]"\
@@ -172,10 +203,7 @@ restore() {
             apt-get --show-progress dselect-upgrade
             ;;
         none )
-            echo -e "${GREEN}Have no package manager${NORM}"
-            ;;
-        * )
-            echo -e "${RED}Unknown package manager type${NORM}"
+            echo -e "${YELLOW}Have no package manager${NORM}"
             ;;
     esac
 
@@ -191,7 +219,7 @@ main() {
     colors "$*"
 
     echo -ne "${RED}"
-    ARGS=`getopt -n "$MYNAME" -o "q      o:r:c:hV" -l "quiet,nocolor,file:,exclude:,compression:,pkgmgr:,owner:,output:,restore:,check:,help,version" -- "$@"`\
+    ARGS=`getopt -n "$MYNAME" -o "q      o:r:c:hV" -l "quiet,nocolor,files:,exclude:,compression:,pkgmgr:,owner:,output:,restore:,check:,help,version" -- "$@"`\
         || exit 1
     eval set -- "${ARGS}"
     echo -ne "${NORM}"
@@ -205,9 +233,9 @@ main() {
             --nocolor )
                 true
                 ;;
-            --file )
+            --files )
                 shift
-                backupdir="$1"
+                files="$1"
                 ;;
             --exclude )
                 shift
@@ -215,7 +243,7 @@ main() {
                 ;;
             --compression )
                 shift
-                compressed_ext="$1"
+                compression="$1"
                 ;;
             --pkgmgr )
                 shift
