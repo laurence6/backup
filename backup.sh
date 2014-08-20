@@ -18,7 +18,7 @@
 #
 
 readonly MYNAME=`basename "$0"`
-readonly VERSION="0.9.0"
+readonly VERSION="0.9.1"
 
 files="/etc /root"
 exclude=".bash_history .local/share/Trash .thumbnails /etc/fstab /etc/hostname *cache* *Cache* *tmp* *.log* *.old"
@@ -183,24 +183,24 @@ restore() {
                 |grep \<|cut -f2 -d' '`
             ;;
         dpkg )
-            apt-get update
             if [ "x" = "x$(which dselect)" ]
             then
                 echo -e "${RED}dselect is required${NORM}" >&2
-                echo -e "${YELLOW}Do you want to install dselect?${NORM} [Y/n]"\
+                echo -ne "${YELLOW}Do you want to install dselect?${NORM} [Y/n]"\
                     && read -s -n1
                 echo -e ""
                 if [ "$REPLY" = "y" -o "$REPLY" = "Y" -o "$REPLY" = "" ]
                 then
-                    apt-get install dselect
+                    apt-get update\
+                        && apt-get -y install dselect
                 fi
                 [ "x" != "x$(which dselect)" ]\
                     && true\
                     || echo -e "${RED}dselect was not installed${NORM}" >&2 && exit 1
             fi
             dselect update
-            dpkg --set-selections <"$packagelist_filename" || exit 1
-            apt-get --show-progress dselect-upgrade
+            dpkg --set-selections <"$packagelist_filename" 2>/dev/null || exit 1
+            apt-get dselect-upgrade
             ;;
         none )
             echo -e "${YELLOW}Have no package manager${NORM}"
