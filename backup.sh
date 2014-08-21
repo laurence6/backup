@@ -18,7 +18,7 @@
 #
 
 readonly MYNAME=`basename "$0"`
-readonly VERSION="0.9.1"
+readonly VERSION="0.9.2"
 
 files="/etc /root"
 exclude=".bash_history .local/share/Trash .thumbnails /etc/fstab /etc/hostname *cache* *Cache* *tmp* *.log* *.old"
@@ -169,7 +169,7 @@ restore() {
     packagelist_filename="`awk '$2 ~ /^[1-9][0-9][0-9][0-9]-[0-1][0-9]-[0-3][0-9].packagelist.txt$/ {print $2}' "$md5file_filename"`" || exit 1
     [ "$files_filename" != "" -a "$packagelist_filename" != "" ]\
         && true\
-        || echo -e "Cannot find backup files" || exit 1
+        || ( echo -e "Cannot find backup files" && exit 1 )
     echo -ne "${NORM}"
 
     case "$pkgmgr" in
@@ -196,7 +196,7 @@ restore() {
                 fi
                 [ "x" != "x$(which dselect)" ]\
                     && true\
-                    || echo -e "${RED}dselect was not installed${NORM}" >&2 && exit 1
+                    || ( echo -e "${RED}dselect was not installed${NORM}" >&2 && exit 1 )
             fi
             dselect update
             dpkg --set-selections <"$packagelist_filename" 2>/dev/null || exit 1
