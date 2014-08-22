@@ -18,7 +18,7 @@
 #
 
 readonly MYNAME=`basename "$0"`
-readonly VERSION="0.9.2"
+readonly VERSION="0.9.3"
 
 files="/etc /root"
 exclude=".bash_history .local/share/Trash .thumbnails /etc/fstab /etc/hostname *cache* *Cache* *tmp* *.log* *.old"
@@ -118,6 +118,7 @@ check() {
     cd "$md5file_dirname" || exit 1
     md5sum --quiet -c "$md5file_filename" || exit 1
     echo -ne "${NORM}"
+    echo -e "${GREEN}md5sum check: PASS${NORM}"
 }
 
 backup() {
