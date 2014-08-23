@@ -18,7 +18,7 @@
 #
 
 readonly MYNAME=`basename "$0"`
-readonly VERSION="0.9.3"
+readonly VERSION="0.9.4"
 
 files="/etc /root"
 exclude=".bash_history .local/share/Trash .thumbnails /etc/fstab /etc/hostname *cache* *Cache* *tmp* *.log* *.old"
@@ -27,6 +27,14 @@ pkgmgr="none"
 owner="root:root"
 source /etc/backuprc 2>/dev/null
 source backuprc 2>/dev/null
+
+err_exit() {
+    [ "x" = "x$1" ]\
+        && exit_code=1\
+        || exit_code=$1
+    echo -ne "${NORM}"\
+        && exit $exit_code
+}
 
 colors() {
     [ "x" = "x`echo $* | awk '/--nocolor/'`" ]\
@@ -113,10 +121,10 @@ check_args() {
 check() {
     echo -ne "${RED}"
     set -e
-    md5file_dirname=`dirname "$1"` || exit 1
-    md5file_filename=`basename "$1"` || exit 1
-    cd "$md5file_dirname" || exit 1
-    md5sum --quiet -c "$md5file_filename" || exit 1
+    md5file_dirname=`dirname "$1"` || err_exit
+    md5file_filename=`basename "$1"` || err_exit
+    cd "$md5file_dirname" || err_exit
+    md5sum --quiet -c "$md5file_filename" || err_exit
     echo -ne "${NORM}"
     echo -e "${GREEN}md5sum check: PASS${NORM}"
 }
@@ -126,7 +134,7 @@ backup() {
     check_args
     local TIME=`date +%F`
 #   TIME=`date +%F-%H-%M-%S`
-    echo -ne "${RED}" && cd "$1" && echo -ne "${NORM}" || exit 1
+    echo -ne "${RED}" && cd "$1" && echo -ne "${NORM}" || err_exit
     echo -e "${GREEN}[`date +%F-%H:%M:%S`] $MYNAME $VERSION: Backup begins.${NORM}"
 
     eval tar -pa$quiet -cf $TIME.files.tar.$compression "$files" --exclude="{..,$exclude}" 2>/dev/null
@@ -166,11 +174,11 @@ restore() {
     fi
 
     echo -ne "${RED}"
-    files_filename="`awk '$2 ~ /^[1-9][0-9][0-9][0-9]-[0-1][0-9]-[0-3][0-9].files.tar.(gz)$|(xz)$|(bz2)$/ {print $2}' "$md5file_filename"`" || exit 1
-    packagelist_filename="`awk '$2 ~ /^[1-9][0-9][0-9][0-9]-[0-1][0-9]-[0-3][0-9].packagelist.txt$/ {print $2}' "$md5file_filename"`" || exit 1
+    files_filename="`awk '$2 ~ /^[1-9][0-9][0-9][0-9]-[0-1][0-9]-[0-3][0-9].files.tar.(gz)$|(xz)$|(bz2)$/ {print $2}' "$md5file_filename"`" || err_exit
+    packagelist_filename="`awk '$2 ~ /^[1-9][0-9][0-9][0-9]-[0-1][0-9]-[0-3][0-9].packagelist.txt$/ {print $2}' "$md5file_filename"`" || err_exit
     [ "$files_filename" != "" -a "$packagelist_filename" != "" ]\
         && true\
-        || ( echo -e "Cannot find backup files" && exit 1 )
+        || { echo -e "Cannot find backup files" >&2 && err_exit; }
     echo -ne "${NORM}"
 
     case "$pkgmgr" in
@@ -197,11 +205,11 @@ restore() {
                 fi
                 [ "x" != "x$(which dselect)" ]\
                     && true\
-                    || ( echo -e "${RED}dselect was not installed${NORM}" >&2 && exit 1 )
+                    || { echo -e "${RED}dselect was not installed${NORM}" >&2 && exit 1; }
             fi
             dselect update
             dpkg --set-selections <"$packagelist_filename" 2>/dev/null || exit 1
-            apt-get dselect-upgrade
+            apt-get -y dselect-upgrade
             ;;
         none )
             echo -e "${YELLOW}Have no package manager${NORM}"
@@ -221,7 +229,7 @@ main() {
 
     echo -ne "${RED}"
     ARGS=`getopt -n "$MYNAME" -o "q      o:r:c:hV" -l "quiet,nocolor,files:,exclude:,compression:,pkgmgr:,owner:,output:,restore:,check:,help,version" -- "$@"`\
-        || exit 1
+        || err_exit
     eval set -- "${ARGS}"
     echo -ne "${NORM}"
 
