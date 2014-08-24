@@ -18,7 +18,7 @@
 #
 
 readonly MYNAME=`basename "$0"`
-readonly VERSION="0.9.4"
+readonly VERSION="0.9.5"
 
 files="/etc /root"
 exclude=".bash_history .local/share/Trash .thumbnails /etc/fstab /etc/hostname *cache* *Cache* *tmp* *.log* *.old"
@@ -222,6 +222,12 @@ restore() {
 }
 
 main() {
+    for dep in tar md5sum awk
+    do
+        [ "x" = "x$(which $dep)" ]\
+            && echo "$dep was not installed!" >&2\
+            && exit 1
+    done
     quiet="v"
     outputdir="."
 
