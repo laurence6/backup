@@ -18,7 +18,7 @@
 #
 
 readonly MYNAME=`basename "$0"`
-readonly VERSION="0.9.5"
+readonly VERSION="0.9.6"
 
 files="/etc /root"
 exclude=".bash_history .local/share/Trash .thumbnails /etc/fstab /etc/hostname *cache* *Cache* *tmp* *.log* *.old"
@@ -166,7 +166,7 @@ restore() {
     echo -ne "${YELLOW}Are you sure to restore all files (It will be dangerous)?${NORM} [y/N]"\
         && read -s -n1
     echo -e ""
-    if [ "$REPLY" = "y" -o  "$REPLY" = "Y" ]
+    if [ "$REPLY" = "y" -o "$REPLY" = "Y" ]
     then
         true
     else
@@ -176,7 +176,7 @@ restore() {
     echo -ne "${RED}"
     files_filename="`awk '$2 ~ /^[1-9][0-9][0-9][0-9]-[0-1][0-9]-[0-3][0-9].files.tar.(gz)$|(xz)$|(bz2)$/ {print $2}' "$md5file_filename"`" || err_exit
     packagelist_filename="`awk '$2 ~ /^[1-9][0-9][0-9][0-9]-[0-1][0-9]-[0-3][0-9].packagelist.txt$/ {print $2}' "$md5file_filename"`" || err_exit
-    [ "$files_filename" != "" -a "$packagelist_filename" != "" ]\
+    [ "$files_filename" != "" -o "$packagelist_filename" != "" ]\
         && true\
         || { echo -e "Cannot find backup files" >&2 && err_exit; }
     echo -ne "${NORM}"
