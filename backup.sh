@@ -30,7 +30,7 @@
 #
 
 readonly MYNAME=`basename "$0"`
-readonly VERSION="0.9.6"
+readonly VERSION="0.9.7"
 
 files="/etc /root"
 exclude=".bash_history .local/share/Trash .thumbnails /etc/fstab /etc/hostname *cache* *Cache* *tmp* *.log* *.old"
@@ -65,7 +65,7 @@ colors() {
 
 print_help() {
 echo -e "${BOLD}"$MYNAME" "$VERSION"${NORM}, backup and restore files on the computer.
-Useage: "$MYNAME" [OPTION]...
+Usage: "$MYNAME" [OPTION]...
 
 Interface:
     -q, --quiet            keep quiet
