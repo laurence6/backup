@@ -6,6 +6,7 @@ A bash script backup and restore files using tar and package list using dpkg or 
 
 ## Usage
 
+<pre>
 ./backup.sh [OPTION]...   
    
 Interface:   
@@ -27,7 +28,7 @@ Check:
 Miscellaneous:   
     -h, --help             display this help and exit   
     -V, --version          print version information   
-
+</pre>
 
 ## License
 
