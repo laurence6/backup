@@ -30,13 +30,8 @@
 #
 
 readonly MYNAME=`basename "$0"`
-readonly VERSION="0.9.7"
+readonly VERSION="0.9.8"
 
-files="/etc /root"
-exclude=".bash_history .local/share/Trash .thumbnails /etc/fstab /etc/hostname *cache* *Cache* *tmp* *.log* *.old"
-compression="gz"
-pkgmgr="none"
-owner="root:root"
 source /etc/backuprc 2>/dev/null
 source backuprc 2>/dev/null
 
@@ -93,11 +88,14 @@ Written by Laurence Liu <liuxy6@gmail.com>"
 check_root() {
     [ $UID != "0" ]\
         && echo -e "${RED}Non root user. Please run as root.${NORM}" >&2\
-        && exit 1\
+        && err_exit\
         || return 0
 }
 
 check_args() {
+    [ "x" = "x$files" -o "x" = "x$exclud" -o "x" = "x$compression" -o "x" = "x$pkgmge" -o "x" = "x$owner" ]\
+        && echo -e "${RED}One or more arguments are empty.${NORM}" >&2\
+        && err_exit
     exclude=`echo "$exclude" | tr " " ","`
 
     case $compression in
@@ -112,7 +110,7 @@ check_args() {
             ;;
         * )
             echo -e "${RED}Unknown compression format "$compression"${NORM}" >&2\
-                && exit 1
+                && err_exit
             ;;
     esac
 
@@ -125,7 +123,7 @@ check_args() {
             ;;
         * )
             echo -e "${RED}Unknown package manager "$pkgmgr"${NORM}" >&2\
-                && exit 1
+                && err_exit
             ;;
     esac
 }
@@ -144,8 +142,7 @@ check() {
 backup() {
     check_root
     check_args
-    local TIME=`date +%F`
-#   TIME=`date +%F-%H-%M-%S`
+    TIME=`date +%F`
     echo -ne "${RED}" && cd "$1" && echo -ne "${NORM}" || err_exit
     echo -e "${GREEN}[`date +%F-%H:%M:%S`] $MYNAME $VERSION: Backup begins.${NORM}"
 
@@ -217,10 +214,10 @@ restore() {
                 fi
                 [ "x" != "x$(which dselect)" ]\
                     && true\
-                    || { echo -e "${RED}dselect was not installed${NORM}" >&2 && exit 1; }
+                    || { echo -e "${RED}dselect was not installed${NORM}" >&2 && err_exit; }
             fi
             dselect update
-            dpkg --set-selections <"$packagelist_filename" 2>/dev/null || exit 1
+            dpkg --set-selections <"$packagelist_filename" 2>/dev/null || err_exit
             apt-get -y dselect-upgrade
             ;;
         none )
@@ -238,7 +235,7 @@ main() {
     do
         [ "x" = "x$(which $dep)" ]\
             && echo "$dep was not installed!" >&2\
-            && exit 1
+            && err_exit
     done
     quiet="v"
     outputdir="."
@@ -313,4 +310,5 @@ main() {
     backup "$outputdir"
 }
 
+trap err_exit SIGINT SIGTERM
 main "$@"
