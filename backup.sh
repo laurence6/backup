@@ -30,7 +30,7 @@
 #
 
 readonly MYNAME=`basename "$0"`
-readonly VERSION="0.9.8"
+readonly VERSION="0.9.9"
 
 source /etc/backuprc 2>/dev/null
 source backuprc 2>/dev/null
@@ -93,7 +93,7 @@ check_root() {
 }
 
 check_args() {
-    [ "x" = "x$files" -o "x" = "x$exclud" -o "x" = "x$compression" -o "x" = "x$pkgmge" -o "x" = "x$owner" ]\
+    [ "x" = "x$files" -o "x" = "x$exclude" -o "x" = "x$compression" -o "x" = "x$pkgmgr" -o "x" = "x$owner" ]\
         && echo -e "${RED}One or more arguments are empty.${NORM}" >&2\
         && err_exit
     exclude=`echo "$exclude" | tr " " ","`
