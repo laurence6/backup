@@ -1,10 +1,9 @@
-backup
-======
+#backup
 
 A bash script backup and restore files using tar and package list using dpkg or pacman.
 
 
-## Usage
+# Usage
 
     ./backup.sh [OPTION]...
 
@@ -29,7 +28,7 @@ A bash script backup and restore files using tar and package list using dpkg or 
         -V, --version          print version information
 
 
-## License
+# License
 
 Copyright (C) 2014-2015  Laurence Liu <liuxy6@gmail.com>
 
