@@ -1,9 +1,12 @@
-#backup
+# DEPRECATED
+
+This project is not maintained anymore. I currently use [laurence6/backup.py](https://github.com/laurence6/backup.py) to backup my system.
+
+# backup.sh
 
 A bash script backup and restore files using tar and package list using dpkg or pacman.
 
-
-# Usage
+## Usage
 
     ./backup.sh [OPTION]...
 
@@ -27,8 +30,7 @@ A bash script backup and restore files using tar and package list using dpkg or 
         -h, --help             display this help and exit
         -V, --version          print version information
 
-
-# License
+## License
 
 Copyright (C) 2014-2015  Laurence Liu <liuxy6@gmail.com>
 
